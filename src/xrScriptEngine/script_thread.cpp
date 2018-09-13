@@ -104,7 +104,7 @@ bool CScriptThread::update()
     try
     {
         scriptEngine->current_thread(this);
-        int l_iErrorCode = lua_resume(lua(), 0);
+        int l_iErrorCode = lua_resume(lua(), 0, 0);
         if (l_iErrorCode && l_iErrorCode != LUA_YIELD)
         {
             CScriptEngine::print_output(lua(), *script_name(), l_iErrorCode);

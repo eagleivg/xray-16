@@ -18,8 +18,8 @@
 struct lua_State;
 
 #ifndef MASTER_GOLD
-#define USE_DEBUGGER
-#define USE_LUA_STUDIO
+//#define USE_DEBUGGER
+//#define USE_LUA_STUDIO
 #endif
 
 #include "xrCore/Containers/AssociativeVector.hpp"
@@ -31,6 +31,7 @@ class CScriptThread;
 struct lua_State;
 struct lua_Debug;
 
+/*
 #ifdef USE_DEBUGGER
 #ifndef USE_LUA_STUDIO
 class CScriptDebugger;
@@ -44,7 +45,7 @@ struct world;
 }
 class lua_studio_engine;
 #endif
-#endif
+#endif*/
 
 enum class ScriptProcessor : u32
 {
@@ -98,8 +99,8 @@ protected:
 #ifndef USE_LUA_STUDIO
     CScriptDebugger* m_scriptDebugger;
 #else
-    cs::lua_studio::world* m_lua_studio_world;
-    lua_studio_engine* m_lua_studio_engine;
+    /*cs::lua_studio::world* m_lua_studio_world;
+    lua_studio_engine* m_lua_studio_engine;*/
 #endif
 #endif
 
@@ -135,6 +136,7 @@ public:
     bool object(LPCSTR caIdentifier, int type);
     bool object(LPCSTR caNamespaceName, LPCSTR caIdentifier, int type);
     luabind::object name_space(LPCSTR namespace_name);
+    sol::object     name_space2(pcstr namespace_name);
     int error_log(LPCSTR caFormat, ...);
     int script_log(LuaMessageType message, LPCSTR caFormat, ...);
     static bool print_output(lua_State* L, pcstr caScriptName, int iErrorCode = 0, pcstr caErrorText = nullptr);
@@ -188,9 +190,9 @@ public:
 #else
     void try_connect_to_debugger();
     void disconnect_from_debugger();
-    cs::lua_studio::world* debugger() const { return m_lua_studio_world; }
-    void initialize_lua_studio(lua_State* state, cs::lua_studio::world*& world, lua_studio_engine*& engine);
-    void finalize_lua_studio(lua_State* state, cs::lua_studio::world*& world, lua_studio_engine*& engine);
+    //cs::lua_studio::world* debugger() const { return m_lua_studio_world; }
+    //void initialize_lua_studio(lua_State* state, cs::lua_studio::world*& world, lua_studio_engine*& engine);
+    //void finalize_lua_studio(lua_State* state, cs::lua_studio::world*& world, lua_studio_engine*& engine);
 #endif
 #endif
     void collect_all_garbage();

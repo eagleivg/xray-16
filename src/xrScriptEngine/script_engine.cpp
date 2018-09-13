@@ -607,6 +607,22 @@ luabind::object CScriptEngine::name_space(LPCSTR namespace_name)
     }
 }
 
+sol::object CScriptEngine::name_space2(pcstr namespace_name)
+{
+    string256 S1;
+    xr_strcpy(S1, namespace_name);
+    LPSTR S = S1;
+
+    sol::state_view view(lua());
+
+    sol::optional<sol::object> obj = view[namespace_name];
+
+    if (obj != sol::nullopt)
+        return *obj;
+
+    return view.globals();
+}
+
 struct raii_guard : private Noncopyable
 {
     CScriptEngine* m_script_engine;
@@ -619,7 +635,7 @@ struct raii_guard : private Noncopyable
 
     ~raii_guard()
     {
-#ifdef DEBUG
+#if 0 // def DEBUG
         const bool lua_studio_connected = !!m_script_engine->debugger();
         if (!lua_studio_connected)
 #endif

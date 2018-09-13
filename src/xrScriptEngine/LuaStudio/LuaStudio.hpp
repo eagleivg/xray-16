@@ -25,6 +25,7 @@ class class_rep;
 }
 }
 
+/*
 class XRSCRIPTENGINE_API lua_studio_engine : public cs::lua_studio::engine, private Noncopyable
 {
 public:
@@ -111,4 +112,4 @@ private:
     void expand_class(Backend& backend, ValueToExpand& value, lua_State* state);
     void expand_class_instance(Backend& backend, ValueToExpand& value_to_expand, lua_State* state);
     void expand_user_data(Backend& backend, ValueToExpand& value, lua_State* state);
-};
+};*/

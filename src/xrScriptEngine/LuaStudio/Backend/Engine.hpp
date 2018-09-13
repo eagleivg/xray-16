@@ -13,6 +13,7 @@
 struct lua_State;
 struct lua_Debug;
 
+/*
 namespace cs
 {
 namespace lua_studio
@@ -149,3 +150,4 @@ public:
 };
 } // namespace lua_studio
 } // namespace cs
+*/
