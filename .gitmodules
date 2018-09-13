@@ -61,3 +61,6 @@
 [submodule "Externals/gli"]
 	path = Externals/gli
 	url = https://github.com/g-truc/gli.git
+[submodule "Externals/sol2"]
+	path = Externals/sol2
+	url = https://github.com/ThePhD/sol2.git
