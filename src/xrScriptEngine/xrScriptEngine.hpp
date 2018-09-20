@@ -30,4 +30,7 @@ extern "C" {
 
 #pragma warning(pop)
 
+#ifdef DEBUG
+#define SOL_IN_DEBUG_DETECTED 1 // not documented macro
+#endif
 #include "sol2/sol.hpp"

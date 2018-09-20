@@ -17,6 +17,7 @@
 #ifdef NDEBUG
 #define XRAY_EXCEPTIONS 0
 #define LUABIND_NO_EXCEPTIONS
+#define SOL_NO_EXCEPTIONS 1 // move out of here?
 #else
 #define XRAY_EXCEPTIONS 1
 #endif
