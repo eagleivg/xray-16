@@ -7,10 +7,6 @@
 #include "blenders/Blender.h"
 #include "blenders/Blender_Recorder.h"
 #include "xrScriptEngine/script_engine.hpp"
-#include "luabind/return_reference_to_policy.hpp"
-
-using namespace luabind;
-using namespace luabind::policy;
 
 #ifdef DEBUG
 #define MDB Memory.dbg_check()
@@ -231,67 +227,63 @@ public:
 // export
 void CResourceManager::LS_Load()
 {
-    // clang-format off
     auto exporterFunc = [](lua_State* luaState)
     {
-        module(luaState)
-        [
-            class_<adopt_sampler>("_sampler")
-                 .def(constructor<const adopt_sampler&>())
-                 .def("texture",       &adopt_sampler::_texture,       return_reference_to<1>())
-                 .def("project",       &adopt_sampler::_projective,    return_reference_to<1>())
-                 .def("clamp",         &adopt_sampler::_clamp,         return_reference_to<1>())
-                 .def("wrap",          &adopt_sampler::_wrap,          return_reference_to<1>())
-                 .def("mirror",        &adopt_sampler::_mirror,        return_reference_to<1>())
-                 .def("f_anisotropic", &adopt_sampler::_f_anisotropic, return_reference_to<1>())
-                 .def("f_trilinear",   &adopt_sampler::_f_trilinear,   return_reference_to<1>())
-                 .def("f_bilinear",    &adopt_sampler::_f_bilinear,    return_reference_to<1>())
-                 .def("f_linear",      &adopt_sampler::_f_linear,      return_reference_to<1>())
-                 .def("f_none",        &adopt_sampler::_f_none,        return_reference_to<1>())
-                 .def("fmin_none",     &adopt_sampler::_fmin_none,     return_reference_to<1>())
-                 .def("fmin_point",    &adopt_sampler::_fmin_point,    return_reference_to<1>())
-                 .def("fmin_linear",   &adopt_sampler::_fmin_linear,   return_reference_to<1>())
-                 .def("fmin_aniso",    &adopt_sampler::_fmin_aniso,    return_reference_to<1>())
-                 .def("fmip_none",     &adopt_sampler::_fmip_none,     return_reference_to<1>())
-                 .def("fmip_point",    &adopt_sampler::_fmip_point,    return_reference_to<1>())
-                 .def("fmip_linear",   &adopt_sampler::_fmip_linear,   return_reference_to<1>())
-                 .def("fmag_none",     &adopt_sampler::_fmag_none,     return_reference_to<1>())
-                 .def("fmag_point",    &adopt_sampler::_fmag_point,    return_reference_to<1>())
-                 .def("fmag_linear",   &adopt_sampler::_fmag_linear,   return_reference_to<1>()),
+        sol::state_view lua(luaState);
 
-            class_<adopt_compiler>("_compiler")
-                .def(constructor<const adopt_compiler&>())
-                .def("begin",              &adopt_compiler::_pass,               return_reference_to<1>())
-                .def("sorting",            &adopt_compiler::_options,            return_reference_to<1>())
-                .def("emissive",           &adopt_compiler::_o_emissive,         return_reference_to<1>())
-                .def("distort",            &adopt_compiler::_o_distort,          return_reference_to<1>())
-                .def("wmark",              &adopt_compiler::_o_wmark,            return_reference_to<1>())
-                .def("fog",                &adopt_compiler::_fog,                return_reference_to<1>())
-                .def("zb",                 &adopt_compiler::_ZB,                 return_reference_to<1>())
-                .def("blend",              &adopt_compiler::_blend,              return_reference_to<1>())
-                .def("aref",               &adopt_compiler::_aref,               return_reference_to<1>())
-                .def("color_write_enable", &adopt_compiler::_color_write_enable, return_reference_to<1>())
-                .def("sampler",            &adopt_compiler::_sampler), // returns sampler-object
+        lua.new_usertype<adopt_sampler>("_sampler",
+            sol::constructors<adopt_sampler(const adopt_sampler&)>(),
+            "texture",            &adopt_sampler::_texture,
+            "project",            &adopt_sampler::_projective,
+            "clamp",              &adopt_sampler::_clamp,
+            "wrap",               &adopt_sampler::_wrap,
+            "mirror",             &adopt_sampler::_mirror,
+            "f_anisotropic",      &adopt_sampler::_f_anisotropic,
+            "f_trilinear",        &adopt_sampler::_f_trilinear,
+            "f_bilinear",         &adopt_sampler::_f_bilinear,
+            "f_linear",           &adopt_sampler::_f_linear,
+            "f_none",             &adopt_sampler::_f_none,
+            "fmin_none",          &adopt_sampler::_fmin_none,
+            "fmin_point",         &adopt_sampler::_fmin_point,
+            "fmin_linear",        &adopt_sampler::_fmin_linear,
+            "fmin_aniso",         &adopt_sampler::_fmin_aniso,
+            "fmip_none",          &adopt_sampler::_fmip_none,
+            "fmip_point",         &adopt_sampler::_fmip_point,
+            "fmip_linear",        &adopt_sampler::_fmip_linear,
+            "fmag_none",          &adopt_sampler::_fmag_none,
+            "fmag_point",         &adopt_sampler::_fmag_point,
+            "fmag_linear",        &adopt_sampler::_fmag_linear
+        );
 
-            class_<adopt_blend>("blend")
-                .enum_("blend")
-                [
-                    value("zero",         int(D3DBLEND_ZERO)),
-                    value("one",          int(D3DBLEND_ONE)),
-                    value("srccolor",     int(D3DBLEND_SRCCOLOR)),
-                    value("invsrccolor",  int(D3DBLEND_INVSRCCOLOR)),
-                    value("srcalpha",     int(D3DBLEND_SRCALPHA)),
-                    value("invsrcalpha",  int(D3DBLEND_INVSRCALPHA)),
-                    value("destalpha",    int(D3DBLEND_DESTALPHA)),
-                    value("invdestalpha", int(D3DBLEND_INVDESTALPHA)),
-                    value("destcolor",    int(D3DBLEND_DESTCOLOR)),
-                    value("invdestcolor", int(D3DBLEND_INVDESTCOLOR)),
-                    value("srcalphasat",  int(D3DBLEND_SRCALPHASAT))
-                ]
-        ];
+        lua.new_usertype<adopt_compiler>("_compiler",
+            sol::constructors<adopt_compiler(const adopt_compiler&)>(),
+            "begin",              &adopt_compiler::_pass,
+            "sorting",            &adopt_compiler::_options,
+            "emissive",           &adopt_compiler::_o_emissive,
+            "distort",            &adopt_compiler::_o_distort,
+            "wmark",              &adopt_compiler::_o_wmark,
+            "fog",                &adopt_compiler::_fog,
+            "zb",                 &adopt_compiler::_ZB,
+            "blend",              &adopt_compiler::_blend,
+            "aref",               &adopt_compiler::_aref,
+            "color_write_enable", &adopt_compiler::_color_write_enable,
+            "sampler",            &adopt_compiler::_sampler // returns sampler-object
+        );
+
+        lua.new_enum("blend",
+            "zero",               D3DBLEND_ZERO,
+            "one",                D3DBLEND_ONE,
+            "srccolor",           D3DBLEND_SRCCOLOR,
+            "invsrccolor",        D3DBLEND_INVSRCCOLOR,
+            "srcalpha",           D3DBLEND_SRCALPHA,
+            "invsrcalpha",        D3DBLEND_INVSRCALPHA,
+            "destalpha",          D3DBLEND_DESTALPHA,
+            "invdestalpha",       D3DBLEND_INVDESTALPHA,
+            "destcolor",          D3DBLEND_DESTCOLOR,
+            "invdestcolor",       D3DBLEND_INVDESTCOLOR,
+            "srcalphasat",        D3DBLEND_SRCALPHASAT
+        );
     };
-    // clang-format on
-
     ScriptEngine.init(exporterFunc, false);
     // load shaders
     const char* shaderPath = RImplementation.getShaderPath();
@@ -318,7 +310,7 @@ BOOL CResourceManager::_lua_HasShader(LPCSTR s_shader)
 {
     string256 undercorated;
     for (int i = 0, l = xr_strlen(s_shader) + 1; i < l; i++)
-        undercorated[i] = (_DELIMITER == s_shader[i]) ? '_' : s_shader[i];
+        undercorated[i] = ('\\' == s_shader[i]) ? '_' : s_shader[i];
 
 #ifdef _EDITOR
     return ScriptEngine.object(undercorated, "editor", LUA_TFUNCTION);
@@ -336,7 +328,7 @@ Shader* CResourceManager::_lua_Create(LPCSTR d_shader, LPCSTR s_textures)
     // undecorate
     string256 undercorated;
     for (int i = 0, l = xr_strlen(d_shader) + 1; i < l; i++)
-        undercorated[i] = (_DELIMITER == d_shader[i]) ? '_' : d_shader[i];
+        undercorated[i] = ('\\' == d_shader[i]) ? '_' : d_shader[i];
     LPCSTR s_shader = undercorated;
 
     // Access to template
@@ -421,8 +413,8 @@ ShaderElement* CBlender_Compile::_lua_Compile(LPCSTR namesp, LPCSTR name)
     LPCSTR t_0 = *L_textures[0] ? *L_textures[0] : "null";
     LPCSTR t_1 = (L_textures.size() > 1) ? *L_textures[1] : "null";
     LPCSTR t_d = detail_texture ? detail_texture : "null";
-    const object shader = RImplementation.Resources->ScriptEngine.name_space(namesp);
-    const functor<void> element = (object)shader[name];
+    sol::table shader = RImplementation.Resources->ScriptEngine.name_space2(namesp);
+    const sol::function element = shader[name];
     adopt_compiler ac = adopt_compiler(this);
     element(ac, t_0, t_1, t_d);
     r_End();
