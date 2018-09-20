@@ -2185,9 +2185,6 @@
     <Filter Include="ScriptClasses\ScriptNetPacket">
       <UniqueIdentifier>{809e504b-a9aa-414d-9340-974bf409d048}</UniqueIdentifier>
     </Filter>
-    <Filter Include="ScriptClasses\ScriptRenderDevice">
-      <UniqueIdentifier>{078eb1f4-96f0-4ca0-b580-a649b7d8ecdb}</UniqueIdentifier>
-    </Filter>
     <Filter Include="ScriptClasses\ScriptSoundInfo">
       <UniqueIdentifier>{0db7dc10-e1ad-4a8d-a173-8831662a2508}</UniqueIdentifier>
     </Filter>
@@ -7776,9 +7773,6 @@
     </ClCompile>
     <ClCompile Include="..\xrServerEntities\script_net_packet_script.cpp">
       <Filter>ScriptClasses\ScriptNetPacket</Filter>
-    </ClCompile>
-    <ClCompile Include="script_render_device_script.cpp">
-      <Filter>ScriptClasses\ScriptRenderDevice</Filter>
     </ClCompile>
     <ClCompile Include="script_sound_info_script.cpp">
       <Filter>ScriptClasses\ScriptSoundInfo</Filter>

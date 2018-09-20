@@ -33,6 +33,7 @@
 #include "XR_IOConsole.h"
 #include "xr_input.h"
 #include "splash.h"
+#include "xrScriptEngine/DebugMacros.hpp" // XXX: move this to xrCore!!!
 
 ENGINE_API CRenderDevice Device;
 ENGINE_API CLoadScreenRenderer load_screen_renderer;
@@ -610,17 +611,47 @@ CRenderDevice* get_device() { return &Device; }
 u32 script_time_global() { return Device.dwTimeGlobal; }
 u32 script_time_global_async() { return Device.TimerAsync_MMT(); }
 
-SCRIPT_EXPORT(Device, (),
+bool is_device_paused(CRenderDevice* d) { return !!Device.Paused(); }
+void set_device_paused(CRenderDevice* d, bool b) { Device.Pause(b, TRUE, FALSE, "set_device_paused_script"); }
+bool is_app_ready() { return pApp->IsLoaded(); }
+u32 time_global(const CRenderDevice* self)
 {
-    using namespace luabind;
-    module(luaState)
-    [
-        def("time_global", &script_time_global),
-        def("time_global_async", &script_time_global_async),
-        def("device", &get_device),
-        def("is_enough_address_space_available", &is_enough_address_space_available)
-    ];
-});
+    THROW(self);
+    return (self->dwTimeGlobal);
+}
+
+ICF static void DeviceScriptExport(lua_State* luaState)
+{
+    sol::state_view lua(luaState);
+
+    lua.new_usertype<CRenderDevice>("render_device",
+        "width",            sol::readonly(&CRenderDevice::dwWidth),
+        "height",           sol::readonly(&CRenderDevice::dwHeight),
+        "time_delta",       sol::readonly(&CRenderDevice::dwTimeDelta),
+        "f_time_delta",     sol::readonly(&CRenderDevice::fTimeDelta),
+        "cam_pos",          sol::readonly(&CRenderDevice::vCameraPosition),
+        "cam_dir",          sol::readonly(&CRenderDevice::vCameraDirection),
+        "cam_top",          sol::readonly(&CRenderDevice::vCameraTop),
+        "cam_right",        sol::readonly(&CRenderDevice::vCameraRight),
+        //"view",           sol::readonly(&CRenderDevice::mView),
+        //"projection",     sol::readonly(&CRenderDevice::mProject),
+        //"full_transform", sol::readonly(&CRenderDevice::mFullTransform),
+        "fov",              sol::readonly(&CRenderDevice::fFOV),
+        "aspect_ratio",     sol::readonly(&CRenderDevice::fASPECT),
+        "precache_frame",   sol::readonly(&CRenderDevice::dwPrecacheFrame),
+        "frame",            sol::readonly(&CRenderDevice::dwFrame),
+        "time_global",      &time_global,
+        "is_paused",        &is_device_paused,
+        "pause",            &set_device_paused,
+        "app_ready",        &is_app_ready
+    );
+
+    lua.set_function("device",                            &get_device);
+    lua.set_function("time_global",                       &script_time_global);
+    lua.set_function("time_global_async",                 &script_time_global_async);
+    lua.set_function("is_enough_address_space_available", &is_enough_address_space_available);
+}
+SCRIPT_EXPORT_FUNC(Device, (), DeviceScriptExport);
 
 CLoadScreenRenderer::CLoadScreenRenderer() : b_registered(false), b_need_user_input(false) {}
 void CLoadScreenRenderer::start(bool b_user_input)

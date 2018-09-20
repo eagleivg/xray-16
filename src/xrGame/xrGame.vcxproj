@@ -3040,10 +3040,6 @@
       <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
       <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
     </ClCompile>
-    <ClCompile Include="script_render_device_script.cpp">
-      <PrecompiledHeaderFile>pch_script.h</PrecompiledHeaderFile>
-      <PrecompiledHeaderOutputFile>$(IntDir)$(ProjectName)_script.pch</PrecompiledHeaderOutputFile>
-    </ClCompile>
     <ClCompile Include="script_sound.cpp" />
     <ClCompile Include="script_sound_action.cpp" />
     <ClCompile Include="script_sound_action_script.cpp">
