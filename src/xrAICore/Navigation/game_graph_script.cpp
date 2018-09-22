@@ -12,9 +12,6 @@
 #include "xrScriptEngine/DebugMacros.hpp" // for THROW // XXX: move debug macros to xrCore
 #include "AISpaceBase.hpp"
 
-using namespace luabind;
-using namespace luabind::policy;
-
 const CGameGraph* get_game_graph() { return &GEnv.AISpace->game_graph(); }
 const CGameGraph::CHeader* get_header(const CGameGraph* self_) { return (&self_->header()); }
 bool get_accessible1(const CGameGraph* self_, const u32& vertex_id) { return (self_->accessible(vertex_id)); }
@@ -37,25 +34,88 @@ GameGraph::LEVEL_MAP const& get_levels(CGameGraph const* graph)
     return graph->header().levels();
 }
 
-SCRIPT_EXPORT(CGameGraph, (), {
-    typedef CGameGraph::CVertex CVertex;
-    module(luaState)[class_<GameGraph::LEVEL_MAP::value_type>("GameGraph__LEVEL_MAP__value_type")
-                         .def_readonly("id", &GameGraph::LEVEL_MAP::value_type::first)
-                         .def_readonly("level", &GameGraph::LEVEL_MAP::value_type::second),
+// Disable all sol2 automagicalness
+namespace sol
+{
+template <>
+struct is_automagical<GameGraph::LEVEL_MAP::value_type> : std::false_type {};
+}
 
-        def("game_graph", &get_game_graph),
+struct LevelMapIteratorState
+{
+    using it_t = GameGraph::LEVEL_MAP::const_iterator;
+    it_t it;
+    it_t last;
 
-        class_<CGameGraph>("CGameGraph")
-            .def("accessible", &get_accessible1)
-            .def("accessible", &get_accessible2)
-            .def("valid_vertex_id", &CGameGraph::valid_vertex_id)
-            .def("vertex", &CGameGraph::vertex)
-            .def("vertex_id", &CGameGraph::vertex_id)
-            .def("levels", &get_levels, return_stl_iterator()),
+    LevelMapIteratorState(const GameGraph::LEVEL_MAP& map) : it(map.begin()), last(map.end()) {}
+};
 
-        class_<CVertex>("GameGraph__CVertex")
-            .def("level_point", &CVertex__level_point)
-            .def("game_point", &CVertex__game_point)
-            .def("level_id", &CVertex::level_id)
-            .def("level_vertex_id", &CVertex::level_vertex_id)];
-});
+// XXX: Remove wrapper, use sol3 when it will be released.
+struct LevelMapWrapper
+{
+    const GameGraph::_LEVEL_ID& id;
+    const GameGraph::SLevel& level;
+
+    auto get_id() const { return id; }
+    auto get_level() const { return level; }
+};
+
+auto LevelMapNext(sol::user<LevelMapIteratorState&> user_it_state, const sol::this_state l)
+{
+    LevelMapIteratorState& it_state = user_it_state;
+    auto& it = it_state.it;
+
+    if (it == it_state.last)
+        return sol::object(sol::lua_nil);
+
+    auto r = sol::object(l, sol::in_place, LevelMapWrapper{ it->first, it->second });
+    std::advance(it, 1);
+    return r;
+}
+
+auto LevelMapPairs(const CGameGraph& graph)
+{
+    return std::make_tuple(
+        &LevelMapNext,
+        sol::user<LevelMapIteratorState>(graph.header().levels()),
+        sol::lua_nil
+    );
+}
+
+void CGameGraphScriptExport(lua_State* luaState)
+{
+    sol::state_view lua(luaState);
+
+    using LevelMap = GameGraph::LEVEL_MAP::value_type;
+    lua.new_usertype<LevelMap>("GameGraph__LEVEL_MAP__value_type",
+        "id",    sol::readonly_property(&LevelMap::first),
+        "level", sol::readonly_property(&LevelMap::second)
+    );
+
+    lua.new_usertype<LevelMapWrapper>("GameGraph__LEVEL_MAP__wrapper",
+        "id",    sol::readonly_property(&LevelMapWrapper::get_id),
+        "level", sol::readonly_property(&LevelMapWrapper::get_level)
+    );
+
+    lua.new_usertype<CGameGraph>("CGameGraph",
+        "accessible",      sol::overload(
+                           &get_accessible1,
+                           &get_accessible2),
+        "valid_vertex_id", &CGameGraph::valid_vertex_id,
+        "vertex",          &CGameGraph::vertex,
+        "vertex_id",       &CGameGraph::vertex_id,
+        //"levels",          &get_levels
+        "levels",          &LevelMapPairs
+    );
+
+    lua.set_function("game_graph", &get_game_graph);
+
+    using CVertex = CGameGraph::CVertex;
+    lua.new_usertype<CVertex>("GameGraph__CVertex",
+        "level_point",     &CVertex__level_point,
+        "game_point",      &CVertex__game_point,
+        "level_id",        &CVertex::level_id,
+        "level_vertex_id", &CVertex::level_vertex_id
+    );
+}
+SCRIPT_EXPORT_FUNC(CGameGraph, (), CGameGraphScriptExport);

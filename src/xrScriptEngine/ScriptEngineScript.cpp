@@ -87,6 +87,14 @@ struct profile_timer_script
 
     profile_timer_script() : start_time(), accumulator(), count(0), recurse_mark(0) {}
 
+    profile_timer_script operator+(const profile_timer_script& portion1) const
+    {
+        profile_timer_script result;
+        result.accumulator = accumulator + portion1.accumulator;
+        result.count = count + portion1.count;
+        return result;
+    }
+
     bool operator<(const profile_timer_script& profile_timer) const
     {
         return accumulator < profile_timer.accumulator;
@@ -136,32 +144,33 @@ inline profile_timer_script operator+(const profile_timer_script& portion0, cons
 }
 
 std::ostream& operator<<(std::ostream& os, const profile_timer_script& pt) { return os << pt.time(); }
-SCRIPT_EXPORT(CScriptEngine, (),
-{
-    using namespace luabind;
-    module(luaState)
-    [
-        class_<profile_timer_script>("profile_timer")
-            .def(constructor<>())
-            .def(constructor<profile_timer_script&>())
-            .def(const_self + profile_timer_script())
-            .def(const_self < profile_timer_script())
-            .def(tostring(self))
-            .def("start", &profile_timer_script::start)
-            .def("stop", &profile_timer_script::stop)
-            .def("time", &profile_timer_script::time),
 
-        def("log", &LuaLog),
-        def("error_log", &ErrorLog),
-        def("flush", &FlushLogs),
-        def("print_stack", &PrintStack),
-        def("prefetch", &prefetch_module),
-        def("verify_if_thread_is_running", &verify_if_thread_is_running),
-        def("bit_and", &bit_and),
-        def("bit_or", &bit_or),
-        def("bit_xor", &bit_xor),
-        def("bit_not", &bit_not),
-        def("editor", &is_editor),
-        def("user_name", &user_name)
-    ];
-});
+void CScriptEngineScriptExport(lua_State* luaState)
+{
+    sol::state_view lua(luaState);
+
+    lua.new_usertype<profile_timer_script>("profile_timer",
+        sol::constructors<
+            profile_timer_script(),
+            profile_timer_script(profile_timer_script&)
+        >(),
+        sol::meta_function::addition, &profile_timer_script::operator+,
+        "start", &profile_timer_script::start,
+        "stop",  &profile_timer_script::stop,
+        "time",  &profile_timer_script::time
+    );
+
+    lua.set_function("log",                         &LuaLog);
+    lua.set_function("error_log",                   &ErrorLog);
+    lua.set_function("flush",                       &FlushLogs);
+    lua.set_function("print_stack",                 &PrintStack);
+    lua.set_function("prefetch",                    &prefetch_module);
+    lua.set_function("verify_if_thread_is_running", &verify_if_thread_is_running);
+    lua.set_function("bit_and",                     &bit_and);
+    lua.set_function("bit_or",                      &bit_or);
+    lua.set_function("bit_xor",                     &bit_xor);
+    lua.set_function("bit_not",                     &bit_not);
+    lua.set_function("editor",                      &is_editor);
+    lua.set_function("user_name",                   &user_name);
+}
+SCRIPT_EXPORT_FUNC(CScriptEngine, (), CScriptEngineScriptExport);

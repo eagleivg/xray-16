@@ -939,7 +939,7 @@ void CScriptEngine::setup_callbacks()
 #if !XRAY_EXCEPTIONS
         luabind::set_error_callback(CScriptEngine::lua_error);
 #endif
-
+        sol::set_default_exception_handler(lua());
         luabind::set_pcall_callback([](lua_State* L) { lua_pushcfunction(L, CScriptEngine::lua_pcall_failed); });
     }
 #if !XRAY_EXCEPTIONS
