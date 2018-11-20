@@ -17,7 +17,7 @@ void CScriptWorldPropertyScriptExport(lua_State* luaState)
 
     lua.new_usertype<CScriptWorldProperty>("world_property",
         sol::constructors<
-            CScriptWorldProperty(CScriptWorldProperty::_condition_type, CScriptWorldProperty::_value_type)
+            CScriptWorldProperty(CScriptWorldProperty::condition_type, CScriptWorldProperty::value_type)
         >(),
         "condition", &CScriptWorldProperty::condition,
         "value",     &CScriptWorldProperty::value
