@@ -43,6 +43,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/cximage
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/GameSpy/src
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/luabind
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/sol2
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/ode/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/OpenAutomate/inc
     ${SDL_INCLUDE_DIRS}

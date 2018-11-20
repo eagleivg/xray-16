@@ -18,6 +18,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../xrRender
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Include/xrRender
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../Externals/luabind
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../../Externals/sol2
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../Externals/gli
     ${CMAKE_CURRENT_SOURCE_DIR}/../../../sdk/include
     ${SDL_INCLUDE_DIRS}
@@ -47,6 +48,6 @@ set_target_properties(${PROJECT_NAME} PROPERTIES COTIRE_CXX_PREFIX_HEADER_INIT "
 cotire(${PROJECT_NAME})
 
 set_target_properties(${PROJECT_NAME} PROPERTIES PREFIX "")
-target_link_libraries(${PROJECT_NAME} xrCore xrCDB xrEngine xrParticles xrScriptEngine xrAPI GL GLEW luabind ${LUA_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} xrCore xrCDB xrEngine xrParticles xrScriptEngine xrAPI GL GLEW luabind sol2 ${LUA_LIBRARIES})
 xr_install(${PROJECT_NAME})
 

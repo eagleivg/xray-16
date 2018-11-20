@@ -12,6 +12,7 @@ include_directories(
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/OpenAutomate/inc
     ${CMAKE_CURRENT_SOURCE_DIR}/../../sdk/include
     ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/luabind
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../Externals/sol2
     ${SDL_INCLUDE_DIRS}
     ${FREEIMAGE_INCLUDE_PATH}
     ${LOCKFILE_INCLUDE_DIR}

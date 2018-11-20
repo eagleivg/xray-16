@@ -86,6 +86,7 @@ target_include_directories(xrUICore PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../
     ../../Externals/lzo/include
     ../../Externals/luabind
+    ../../Externals/sol2
     ${SDL_INCLUDE_DIRS})
-target_link_libraries(xrUICore xrAPI pugixml xrScriptEngine ${LUAJIT_LIBRARIES} xrEngine xrMiscMath xrCore luabind ${SDL_LIBRARIES})
+target_link_libraries(xrUICore xrAPI pugixml xrScriptEngine ${LUAJIT_LIBRARIES} xrEngine xrMiscMath xrCore luabind sol2 ${SDL_LIBRARIES})
 xr_install(${PROJECT_NAME})
