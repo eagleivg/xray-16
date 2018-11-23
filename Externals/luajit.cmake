@@ -46,7 +46,7 @@ option ( LUAJIT_USE_GDBJIT "This is the client for the GDB JIT API. GDB 7.0 or h
 option ( LUA_USE_APICHECK "Turn on assertions for the Lua/C API to debug problems with lua_* calls. This is rather slow, use only while developing C libraries/embeddings." OFF )
 option ( LUA_USE_ASSERT "Turn on assertions for the whole LuaJIT VM. This significantly slows down everything. Use only if you suspect a problem with LuaJIT itself." OFF )
 
-option ( LUAJIT_CPU_SSE2 "Disable SSE2." OFF )
+option ( LUAJIT_CPU_SSE2 "Disable SSE2." ON )
 option ( LUAJIT_CPU_NOCMOV "Disable NOCMOV." OFF )
 
 # Tunable variables
