@@ -5,6 +5,7 @@
 #include "PerformanceAlert.hpp"
 
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_for_each.h>
 #include <tbb/parallel_sort.h>
 
 //#define DEBUG_SCHEDULER
@@ -429,7 +430,8 @@ void CSheduler::Update()
     // Realtime priority
     m_processing_now = true;
     const u32 dwTime = Device.dwTimeGlobal;
-    for (auto& item : ItemsRT)
+    
+    tbb::parallel_for_each(ItemsRT, [&](auto item)
     {
         R_ASSERT(item.Object);
 #ifdef DEBUG_SCHEDULER
@@ -441,9 +443,9 @@ void CSheduler::Update()
             Msg("SCHEDULER: process unregister [%s][%x][%s]", item.Object->shedule_Name().c_str(), item.Object, "false");
 #endif
             item.dwTimeOfLastExecute = dwTime;
-            continue;
         }
-
+        else
+        {
         const u32 Elapsed = dwTime - item.dwTimeOfLastExecute;
 #ifdef DEBUG
         VERIFY(item.Object->GetSchedulerData().dbg_startframe != Device.dwFrame);
@@ -451,7 +453,9 @@ void CSheduler::Update()
 #endif
         item.Object->shedule_Update(Elapsed);
         item.dwTimeOfLastExecute = dwTime;
+        }
     }
+    );
 
     // Normal (sheduled)
     ProcessStep();
