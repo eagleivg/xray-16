@@ -10,11 +10,12 @@ CStringTable& StringTable() { return *((CStringTable*)gStringTable); }
 xr_unique_ptr<STRING_TABLE_DATA> CStringTable::pData;
 BOOL CStringTable::m_bWriteErrorsToLog = FALSE;
 u32 CStringTable::LanguageID = std::numeric_limits<u32>::max();
-xr_vector<xr_token> CStringTable::languagesToken;
 
 CStringTable::CStringTable()
 {
+    languagesToken.reserve(2);
     pData = nullptr;
+    Msg("ctr str table");
 }
 
 CStringTable::~CStringTable() { Destroy(); }
@@ -39,6 +40,7 @@ void CStringTable::rescan()
 
 void CStringTable::Init()
 {
+    Msg("init str table");
     if (pData)
         return;
 

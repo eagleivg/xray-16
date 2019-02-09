@@ -24,7 +24,7 @@ public:
     virtual ~CStringTable();
 
     void Init();
-    static void Destroy();
+    void Destroy();
 
     STRING_VALUE translate(const STRING_ID& str_id) const;
     void rescan();
@@ -43,7 +43,7 @@ private:
     void SetLanguage();
     static STRING_VALUE ParseLine(LPCSTR str, LPCSTR key, bool bFirst);
     static xr_unique_ptr<STRING_TABLE_DATA> pData;
-    static xr_vector<xr_token> languagesToken;
+    xr_vector<xr_token> languagesToken;
 };
 
 CStringTable& StringTable();
