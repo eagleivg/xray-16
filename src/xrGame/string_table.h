@@ -34,7 +34,7 @@ public:
     static BOOL m_bWriteErrorsToLog;
     static void ReparseKeyBindings();
 
-    xr_token* GetLanguagesToken() const;
+    xr_token* GetLanguagesToken();
     static u32 LanguageID;
 
 private:

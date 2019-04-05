@@ -142,7 +142,7 @@ void CStringTable::SetLanguage()
     }
 }
 
-xr_token* CStringTable::GetLanguagesToken() const { return languagesToken.data(); }
+xr_token* CStringTable::GetLanguagesToken() { return languagesToken.data(); }
 
 void CStringTable::Load(LPCSTR xml_file_full)
 {
