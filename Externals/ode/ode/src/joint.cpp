@@ -1240,7 +1240,7 @@ extern "C" ODE_API void dJointAddSliderForce (dxJointSlider *joint, dReal force)
   dUASSERT(joint->vtable == &__dslider_vtable,"joint is not a slider");
 
   if (joint->flags & dJOINT_REVERSE)
-    force -= force;
+    force = -force;
 
   getAxis (joint,axis,joint->axis1);
   axis[0] *= force;
