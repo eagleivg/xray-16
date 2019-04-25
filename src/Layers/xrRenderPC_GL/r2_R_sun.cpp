@@ -136,7 +136,7 @@ void XRVec3TransformNormal(Fvector3 *pout, const Fvector3 &pv, const Fmatrix &pm
     pout->z = pm.m[0][2] * pv.x + pm.m[1][2] * pv.y + pm.m[2][2] * pv.z;
 }
 
-void XRVec3TransformCoordArray(Fvector3* out, const Fvector3* in, const Fmatrix& matrix, unsigned int elements)
+void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const Fmatrix& matrix, unsigned int elements)
 {
     for (unsigned int i = 0; i < elements; ++i)
     {
@@ -340,43 +340,43 @@ struct Frustum
     Frustum();
     Frustum(const Fmatrix* matrix);
 
-    Fvector4 camPlanes [6];
+    glm::vec4 camPlanes [6];
     int nVertexLUT [6];
-    Fvector3 pntList [8];
+    glm::vec3 pntList [8];
 };
 
 struct BoundingBox
 {
-    Fvector3 minPt;
-    Fvector3 maxPt;
+    glm::vec3 minPt;
+    glm::vec3 maxPt;
 
     BoundingBox()
     {
-        minPt.set(1e33f, 1e33f, 1e33f);
-        maxPt.set(-1e33f, -1e33f, -1e33f);
+        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
+        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
     }
     BoundingBox(const BoundingBox& other): minPt(other.minPt), maxPt(other.maxPt) { }
 
-    explicit BoundingBox(const Fvector3* points, UINT n)
+    explicit BoundingBox(const glm::vec3* points, UINT n)
     {
-        minPt.set(1e33f, 1e33f, 1e33f);
-        maxPt.set(-1e33f, -1e33f, -1e33f);
+        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
+        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < n; i++)
             Merge(&points[i]);
     }
 
-    explicit BoundingBox(const std::vector<Fvector3>* points)
+    explicit BoundingBox(const std::vector<glm::vec3>* points)
     {
-        minPt.set(1e33f, 1e33f, 1e33f);
-        maxPt.set(-1e33f, -1e33f, -1e33f);
+        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
+        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < points->size(); i++)
             Merge(&(*points)[i]);
     }
 
     explicit BoundingBox(const std::vector<BoundingBox>* boxes)
     {
-        minPt.set(1e33f, 1e33f, 1e33f);
-        maxPt.set(-1e33f, -1e33f, -1e33f);
+        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
+        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < boxes->size(); i++)
         {
             Merge(&(*boxes)[i].maxPt);
@@ -384,15 +384,12 @@ struct BoundingBox
         }
     }
 
-    void Centroid(Fvector3* vec) const
+    void Centroid(glm::vec3* vec) const
     {
-        Fvector3 tmp = minPt;
-        tmp.add(maxPt);
-        tmp.mul(0.5f);
-        *vec = tmp; 
+        *vec = (minPt + maxPt) * 0.5f; 
     }
 
-    void Merge(const Fvector3* vec)
+    void Merge(const glm::vec3* vec)
     {
         minPt.x = _min(minPt.x, vec->x);
         minPt.y = _min(minPt.y, vec->y);
@@ -412,8 +409,8 @@ struct BoundingBox
 //  PlaneIntersection
 //    computes the point where three planes intersect
 //    returns whether or not the point exists.
-static inline BOOL PlaneIntersection(Fvector3* intersectPt, const Fvector4& p0, const Fvector4& p1,
-                                     const Fvector4& p2)
+static inline BOOL PlaneIntersection(glm::vec3* intersectPt, const glm::vec4& p0, const glm::vec4& p1,
+                                     const glm::vec4& p2)
 {
     glm::vec3 n0 = glm::vec3(p0.x, p0.y, p0.z);
     glm::vec3 n1 = glm::vec3(p1.x, p1.y, p1.z);
@@ -437,9 +434,7 @@ static inline BOOL PlaneIntersection(Fvector3* intersectPt, const Fvector4& p0, 
     n1_n2 += n2_n0;
     n1_n2 += n0_n1;
     n1_n2 = -n1_n2 * secTheta;
-    intersectPt->x = n1_n2.x;
-    intersectPt->y = n1_n2.y;
-    intersectPt->z = n1_n2.z;
+    *intersectPt = n1_n2;
     return TRUE;
 }
 
@@ -454,42 +449,34 @@ Frustum::Frustum()
 Frustum::Frustum(const Fmatrix* matrix)
 {
     //  build a view frustum based on the current view & projection matrices...
-    Fvector4 column1 = {matrix->_11, matrix->_21, matrix->_31, matrix->_41};
-    Fvector4 column2 = {matrix->_12, matrix->_22, matrix->_32, matrix->_42};
-    Fvector4 column3 = {matrix->_13, matrix->_23, matrix->_33, matrix->_43};
-    Fvector4 column4 = {matrix->_14, matrix->_24, matrix->_34, matrix->_44};
+    glm::vec4 column1 = glm::vec4(matrix->_11, matrix->_21, matrix->_31, matrix->_41);
+    glm::vec4 column2 = glm::vec4(matrix->_12, matrix->_22, matrix->_32, matrix->_42);
+    glm::vec4 column3 = glm::vec4(matrix->_13, matrix->_23, matrix->_33, matrix->_43);
+    glm::vec4 column4 = glm::vec4(matrix->_14, matrix->_24, matrix->_34, matrix->_44);
 
-    Fvector4 planes[6];
-    Fvector4 tmp;
-    tmp.set(column4);
-    planes[0] = tmp.sub(column1); // left
-    tmp.set(column4);
-    planes[1] = tmp.add(column1); // right
-    tmp.set(column4);
-    planes[2] = tmp.sub(column2); // bottom
-    tmp.set(column4);
-    planes[3] = tmp.add(column2); // top
-    tmp.set(column4);
-    planes[4] = tmp.sub(column3); // near
-    tmp.set(column4);
-    planes[5] = tmp.add(column3); // far
+    glm::vec4 planes[6];
+    planes[0] = column4 - column1; // left
+    planes[1] = column4 + column1; // right
+    planes[2] = column4 - column2; // bottom
+    planes[3] = column4 + column2; // top
+    planes[4] = column4 - column3; // near
+    planes[5] = column4 + column3; // far
     // ignore near & far plane
 
     int p;
 
     for (p = 0; p < 6; p++)
     {
-        planes[p].normalize();
-        camPlanes[p] = planes[p];
+        camPlanes[p] = glm::normalize(planes[p]);
         // build a bit-field that will tell us the indices for the nearest and farthest vertices from each plane...
-        nVertexLUT[p] = (planes[p].x < 0.f ? 1 : 0) | (planes[p].y < 0.f ? 2 : 0) | (planes[p].z < 0.f ? 4 : 0); 
+        nVertexLUT[p] = (camPlanes[p].x < 0.f ? 1 : 0) | (camPlanes[p].y < 0.f ? 2 : 0) | (camPlanes[p].z < 0.f ? 4 : 0); 
     }
 
     for (int i = 0; i < 8; i++) // compute extrema
     {
-        const Fvector4& p0 = i & 1 ? camPlanes[4] : camPlanes[5];
-        const Fvector4& p1 = i & 2 ? camPlanes[3] : camPlanes[2];
-        const Fvector4& p2 = i & 4 ? camPlanes[0] : camPlanes[1];
+        const glm::vec4& p0 = i & 1 ? camPlanes[4] : camPlanes[5];
+        const glm::vec4& p1 = i & 2 ? camPlanes[3] : camPlanes[2];
+        const glm::vec4& p2 = i & 4 ? camPlanes[0] : camPlanes[1];
         PlaneIntersection(&pntList[i], p0, p1, p2);
     }
 }
@@ -786,7 +773,7 @@ void CRender::render_sun()
     {
         //  get the near and the far plane (points) in eye space.
         #define POINTS_NUM 8
-        Fvector3 frustumPnts[POINTS_NUM];
+        glm::vec3 frustumPnts[POINTS_NUM];
 
         Frustum eyeFrustum(&m_Projection); // autocomputes all the extrema points
 
