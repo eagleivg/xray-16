@@ -127,11 +127,11 @@ static inline float XRPlaneDotNormal(const Fvector4 &pp, const Fvector3 &pv)
     return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) );
 }
 
-void XRVec3TransformNormal(Fvector3 *pout, const Fvector3 &pv, const Fmatrix &pm)
+glm::vec3 XRVec3TransformNormal(const glm::vec3 &pv, const Fmatrix &pm)
 {
-    pout->x = pm.m[0][0] * pv.x + pm.m[1][0] * pv.y + pm.m[2][0] * pv.z;
-    pout->y = pm.m[0][1] * pv.x + pm.m[1][1] * pv.y + pm.m[2][1] * pv.z;
-    pout->z = pm.m[0][2] * pv.x + pm.m[1][2] * pv.y + pm.m[2][2] * pv.z;
+    return glm::vec3(pm.m[0][0] * pv.x + pm.m[1][0] * pv.y + pm.m[2][0] * pv.z,
+    pm.m[0][1] * pv.x + pm.m[1][1] * pv.y + pm.m[2][1] * pv.z,
+    pm.m[0][2] * pv.x + pm.m[1][2] * pv.y + pm.m[2][2] * pv.z);
 }
 
 void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const Fmatrix& matrix, unsigned int elements)
@@ -756,8 +756,7 @@ void CRender::render_sun()
     //	Prepare to interact with D3DX code
     const Fmatrix m_View = Device.mView;
     const Fmatrix m_Projection = ex_project;
-    Fvector3 m_lightDir = {fuckingsun->direction.x, fuckingsun->direction.y, fuckingsun->direction.z};
-    m_lightDir.invert();
+    glm::vec3 m_lightDir = -glm::vec3(fuckingsun->direction.x, fuckingsun->direction.y, fuckingsun->direction.z);
 
     //  these are the limits specified by the physical camera
     //  gamma is the "tilt angle" between the light and the view direction.
@@ -787,14 +786,14 @@ void CRender::render_sun()
         //   rotate/translate matrix, before constructing an ortho projection.
         //   this matrix is a variant of "light space" from LSPSMs, with the Y and Z axes permuted
 
-        Fvector3 leftVector, upVector, viewVector;
-        const Fvector3 eyeVector = {0.f, 0.f, -1.f}; //  eye is always -Z in eye space
+        glm::vec3 leftVector, viewVector;
+        const glm::vec3 eyeVector(0.f, 0.f, -1.f); //  eye is always -Z in eye space
 
         //  code copied straight from BuildLSPSMProjectionMatrix
-        XRVec3TransformNormal(&upVector, m_lightDir, m_View); // lightDir is defined in eye space, so xform it
-        leftVector.crossproduct(upVector, eyeVector);
-        leftVector.normalize();
-        viewVector.crossproduct(upVector, leftVector);
+        glm::vec3 upVector = XRVec3TransformNormal(m_lightDir, m_View); // lightDir is defined in eye space, so xform it
+        leftVector = glm::cross(upVector, eyeVector);
+        leftVector = glm::normalize(leftVector);
+        viewVector = glm::cross(upVector, leftVector);
 
         Fmatrix lightSpaceBasis;
         lightSpaceBasis._11 = leftVector.x;
