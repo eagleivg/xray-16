@@ -6,6 +6,7 @@
 #include "glm/glm.hpp"
 #include "glm/gtc/type_ptr.hpp"
 #include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/matrix_access.hpp"
 
 
 const float tweak_COP_initial_offs = 1200.f;
@@ -336,7 +337,7 @@ void XRMatrixInverse(Fmatrix *pout, float *pdeterminant, const Fmatrix &pm)
 struct Frustum
 {
     Frustum();
-    Frustum(const Fmatrix* matrix);
+    Frustum(const glm::mat4* matrix);
 
     glm::vec4 camPlanes [6];
     int nVertexLUT [6];
@@ -444,13 +445,13 @@ Frustum::Frustum()
 }
 
 //  build a frustum from a camera (projection, or viewProjection) matrix
-Frustum::Frustum(const Fmatrix* matrix)
+Frustum::Frustum(const glm::mat4 *matrix)
 {
     //  build a view frustum based on the current view & projection matrices...
-    glm::vec4 column1 = glm::vec4(matrix->_11, matrix->_21, matrix->_31, matrix->_41);
-    glm::vec4 column2 = glm::vec4(matrix->_12, matrix->_22, matrix->_32, matrix->_42);
-    glm::vec4 column3 = glm::vec4(matrix->_13, matrix->_23, matrix->_33, matrix->_43);
-    glm::vec4 column4 = glm::vec4(matrix->_14, matrix->_24, matrix->_34, matrix->_44);
+    glm::vec4 column1 = glm::column(*matrix, 0);
+    glm::vec4 column2 = glm::column(*matrix, 1);
+    glm::vec4 column3 = glm::column(*matrix, 2);
+    glm::vec4 column4 = glm::column(*matrix, 3);
 
     glm::vec4 planes[6];
     planes[0] = column4 - column1; // left
@@ -487,6 +488,19 @@ Fvector3 wform(Fmatrix& m, Fvector3 const& v)
     r.y = v.x * m._12 + v.y * m._22 + v.z * m._32 + m._42;
     r.z = v.x * m._13 + v.y * m._23 + v.z * m._33 + m._43;
     r.w = v.x * m._14 + v.y * m._24 + v.z * m._34 + m._44;
+    // VERIFY		(r.w>0.f);
+    float invW = 1.0f / r.w;
+    Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
+    return r3;
+}
+
+Fvector3 wform(glm::mat4& m, Fvector3 const& v)
+{
+    Fvector4 r;
+    r.x = v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0] + m[3][0];
+    r.y = v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1] + m[3][1];
+    r.z = v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2] + m[3][2];
+    r.w = v.x * m[0][3] + v.y * m[1][3] + v.z * m[2][3] + m[3][3];
     // VERIFY		(r.w>0.f);
     float invW = 1.0f / r.w;
     Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
@@ -614,31 +628,20 @@ Fvector2 BuildTSMProjectionMatrix_caster_depth_bounds(Fmatrix& lightSpaceBasis)
     return {min_z, max_z};
 }
 
-/** calculate view-frustum bounds in world space
- * @brief CRender::calc_ws_frustrum_bounds
- * @param ex_project
- * @param ex_full
- * @param ex_full_inverse
- */
-void CRender::calc_ws_frustrum_bounds(Fmatrix &ex_project, Fmatrix &ex_full, Fmatrix &ex_full_inverse)
-{
-    float _far_ = std::min(OLES_SUN_LIMIT_27_01_07, g_pGamePersistent->Environment().CurrentEnv->far_plane);
-    //ex_project.build_projection	(deg2rad(Device.fFOV),Device.fASPECT,ps_r2_sun_near,_far_);	
-    ex_project.build_projection(deg2rad(Device.fFOV), Device.fASPECT, VIEWPORT_NEAR, _far_);
-    ex_full.mul(ex_project, Device.mView);
-    ex_full_inverse.invert(ex_full);
-    XRMatrixInverse(&ex_full_inverse, nullptr, ex_full);
-}
-
 void CRender::render_sun()
 {
     PIX_EVENT(render_sun);
-    light* fuckingsun = (light*)Lights.sun._get();
+    light* fuckingsun = static_cast<light*>(Lights.sun._get());
     Fmatrix m_LightViewProj;
 
-
-    Fmatrix ex_project, ex_full, ex_full_inverse;
-    calc_ws_frustrum_bounds(ex_project, ex_full, ex_full_inverse);
+    // calculate view-frustum bounds in world space
+    glm::mat4 ex_full_inverse, ex_full, ex_project;
+    {
+        float _far_ = std::min(OLES_SUN_LIMIT_27_01_07, g_pGamePersistent->Environment().CurrentEnv->far_plane);
+        ex_project = glm::perspective(deg2rad(Device.fFOV), Device.fASPECT, VIEWPORT_NEAR, _far_);
+        ex_full = ex_project * glm::make_mat4x4(&Device.mView.m[0][0]);
+        ex_full_inverse = glm::inverse(ex_full);
+    }
 
     // Compute volume(s) - something like a frustum for infinite directional light
     // Also compute virtual light position and sector it is inside
@@ -650,13 +653,12 @@ void CRender::render_sun()
     {
         FPU::m64r();
         // Lets begin from base frustum
-        Fmatrix fullxform_inv = ex_full_inverse;
         DumbConvexVolume<false> hull;
         {
             hull.points.reserve(8);
             for (int p = 0; p < 8; p++)
             {
-                Fvector3 xf = wform(fullxform_inv, corners[p]);
+                Fvector3 xf = wform(ex_full_inverse, corners[p]);
                 hull.points.push_back(xf);
             }
             for (int plane = 0; plane < 6; plane++)
@@ -755,7 +757,7 @@ void CRender::render_sun()
 
     //	Prepare to interact with D3DX code
     const Fmatrix m_View = Device.mView;
-    const Fmatrix m_Projection = ex_project;
+    const glm::mat4 m_Projection = ex_project;
     glm::vec3 m_lightDir = -glm::vec3(fuckingsun->direction.x, fuckingsun->direction.y, fuckingsun->direction.z);
 
     //  these are the limits specified by the physical camera
@@ -987,7 +989,7 @@ void CRender::render_sun()
         // create clipper
         DumbClipper view_clipper;
         Fmatrix xform = m_LightViewProj;
-        view_clipper.frustum.CreateFromMatrix(ex_full, FRUSTUM_P_ALL);
+        view_clipper.frustum.CreateFromMatrix(*(Fmatrix*)glm::value_ptr(ex_full), FRUSTUM_P_ALL);
         for (int p = 0; p < view_clipper.frustum.p_count; p++)
         {
             Fplane& P = view_clipper.frustum.planes [p];
@@ -1109,15 +1111,13 @@ void CRender::render_sun()
 
 void CRender::render_sun_near()
 {
-    light* fuckingsun = (light*)Lights.sun._get();
+    light* fuckingsun = static_cast<light*>(Lights.sun._get());
 
     // calculate view-frustum bounds in world space
-    Fmatrix ex_project, ex_full, ex_full_inverse;
+    glm::mat4 ex_full_inverse;
     {
-        ex_project.build_projection(deg2rad(Device.fFOV/* *Device.fASPECT*/), Device.fASPECT,VIEWPORT_NEAR,
-                                    ps_r2_sun_near);
-        ex_full.mul(ex_project, Device.mView);
-        XRMatrixInverse(&ex_full_inverse, nullptr, ex_full);
+        glm::mat4 ex_project = glm::perspective(deg2rad(Device.fFOV), Device.fASPECT,VIEWPORT_NEAR, ps_r2_sun_near);
+        ex_full_inverse = glm::inverse(ex_project * glm::make_mat4x4(&Device.mView.m[0][0]));
     }
 
     // Compute volume(s) - something like a frustum for infinite directional light
@@ -1130,7 +1130,6 @@ void CRender::render_sun_near()
     {
         FPU::m64r();
         // Lets begin from base frustum
-        Fmatrix fullxform_inv = ex_full_inverse;
 #ifdef	_DEBUG
 		typedef		DumbConvexVolume<true>	t_volume;
 #else
@@ -1141,7 +1140,7 @@ void CRender::render_sun_near()
             hull.points.reserve(9);
             for (int p = 0; p < 8; p++)
             {
-                Fvector3 xf = wform(fullxform_inv, corners[p]);
+                Fvector3 xf = wform(ex_full_inverse, corners[p]);
                 hull.points.push_back(xf);
             }
             for (int plane = 0; plane < 6; plane++)
