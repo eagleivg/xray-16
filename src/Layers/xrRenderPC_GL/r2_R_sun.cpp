@@ -4,6 +4,9 @@
 #include "Layers/xrRender/FBasicVisual.h"
 #include "r3_R_sun_support.h"
 #include "glm/glm.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+
 
 const float tweak_COP_initial_offs = 1200.f;
 const float tweak_ortho_xform_initial_offs = 1000.f; //. ?
@@ -113,11 +116,6 @@ static int facetable[6][4] = {
 #define FLT_SIGN(F) ((FLT_AS_DW(F) & 0x80000000L))
 #define ALMOST_ZERO(F) ((FLT_AS_DW(F) & 0x7f800000L)==0)
 #define IS_SPECIAL(F) ((FLT_AS_DW(F) & 0x7f800000L)==0x7f800000L)
-
-static inline float XRVec2Length(const Fvector2 &pv)
-{
-    return sqrtf( pv.x * pv.x + pv.y * pv.y );
-}
 
 static inline float XRPlaneDotCoord(const Fvector4 &pp, const Fvector3 &pv)
 {
@@ -717,6 +715,7 @@ void CRender::render_sun()
         }
         Fbox& bb = frustum_bb;
         bb.grow(EPS);
+
         XRMatrixOrthoOffCenterLH(&mdir_Project, bb.vMin.x, bb.vMax.x, bb.vMin.y, bb.vMax.y,
                                    bb.vMin.z - tweak_ortho_xform_initial_offs, bb.vMax.z);
 
@@ -846,7 +845,7 @@ void CRender::render_sun()
         //  transform the view frustum by the new matrix
         XRVec3TransformCoordArray(frustumPnts, frustumPnts, lightSpaceOrtho, POINTS_NUM);
 
-        Fvector2 centerPts [2];
+        glm::vec2 centerPts [2];
         //  near plane
         centerPts[0].x = 0.25f * (frustumPnts[4].x + frustumPnts[5].x + frustumPnts[6].x + frustumPnts[7].x);
         centerPts[0].y = 0.25f * (frustumPnts[4].y + frustumPnts[5].y + frustumPnts[6].y + frustumPnts[7].y);
@@ -854,9 +853,9 @@ void CRender::render_sun()
         centerPts[1].x = 0.25f * (frustumPnts[0].x + frustumPnts[1].x + frustumPnts[2].x + frustumPnts[3].x);
         centerPts[1].y = 0.25f * (frustumPnts[0].y + frustumPnts[1].y + frustumPnts[2].y + frustumPnts[3].y);
 
-        Fvector2 centerOrig = centerPts[0];
-        centerOrig.add(centerPts[1]);
-        centerOrig.mul(0.5f);
+        glm::vec2 centerOrig = centerPts[0];
+        centerOrig += centerPts[1];
+        centerOrig *= 0.5f;
 
         Fmatrix trapezoid_space;
 
@@ -865,9 +864,9 @@ void CRender::render_sun()
                                 0.f, 0.f, 1.f, 0.f,
                                 -centerOrig.x, -centerOrig.y, 0.f, 1.f};
 
-        Fvector2 center_dirl = centerPts[1];
-        center_dirl.sub(centerOrig);
-        float half_center_len = XRVec2Length(center_dirl);
+        glm::vec2 center_dirl = centerPts[1];
+        center_dirl -= centerOrig;
+        float half_center_len = glm::length(center_dirl);
         float x_len = centerPts[1].x - centerOrig.x;
         float y_len = centerPts[1].y - centerOrig.y;
 
