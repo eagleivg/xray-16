@@ -19,10 +19,6 @@ float OLES_SUN_LIMIT_27_01_07 = 100.f;
 const float MAP_SIZE_START = 6.f;
 const float MAP_GROW_FACTOR = 4.f;
 
-#include "xmmintrin.h"
-
-#define USE_INTRINSICS
-
 // DG: _CRT_ALIGN seems to be MSVC specific, so provide implementation..
 #ifndef _CRT_ALIGN
 #if defined(__GNUC__) // also applies for clang
@@ -40,61 +36,6 @@ const float MAP_GROW_FACTOR = 4.f;
 // DG end
 
 #define RENDER_MATRIX_INVERSE_EPSILON		1e-16f	// JDC: changed from 1e-14f to allow full wasteland parallel light projections to invert
-
-static const __m128 vector_float_inverse_epsilon			= { RENDER_MATRIX_INVERSE_EPSILON, RENDER_MATRIX_INVERSE_EPSILON, RENDER_MATRIX_INVERSE_EPSILON, RENDER_MATRIX_INVERSE_EPSILON };
-
-/* The Intel API is flexible enough that we must allow aliasing with other
-   vector types, and their scalar components.  */
-typedef float __m128 __attribute__ ((__vector_size__ (16), __may_alias__));
-
-/* Unaligned version of the same type.  */
-typedef float __m128_u __attribute__ ((__vector_size__ (16), __may_alias__, __aligned__ (1)));
-
-/* Internal data types for implementing the intrinsics.  */
-typedef float __v4sf __attribute__ ((__vector_size__ (16)));
-
-// make the intrinsics "type unsafe"
-typedef union DECLSPEC_INTRINTYPE _CRT_ALIGN( 16 ) __m128c
-{
-	__m128c() {}
-	__m128c( __m128 f )
-	{
-		m128 = f;
-	}
-	__m128c( __m128i i )
-	{
-		m128i = i;
-	}
-	operator	__m128()
-	{
-		return m128;
-	}
-	operator	__m128i()
-	{
-		return m128i;
-	}
-	__m128		m128;
-	__m128i		m128i;
-} __m128c;
-
-#define _mm_madd_ps( a, b, c )				_mm_add_ps( _mm_mul_ps( (a), (b) ), (c) )
-#define _mm_nmsub_ps( a, b, c )				_mm_sub_ps( (c), _mm_mul_ps( (a), (b) ) )
-#define _mm_splat_ps( x, i )				__m128c( _mm_shuffle_epi32( __m128c( x ), _MM_SHUFFLE( i, i, i, i ) ) )
-#define _mm_perm_ps( x, perm )				__m128c( _mm_shuffle_epi32( __m128c( x ), perm ) )
-#define _mm_sel_ps( a, b, c )  				_mm_or_ps( _mm_andnot_ps( __m128c( c ), a ), _mm_and_ps( __m128c( c ), b ) )
-#define _mm_sel_si128( a, b, c )			_mm_or_si128( _mm_andnot_si128( __m128c( c ), a ), _mm_and_si128( __m128c( c ), b ) )
-#define _mm_sld_ps( x, y, imm )				__m128c( _mm_or_si128( _mm_srli_si128( __m128c( x ), imm ), _mm_slli_si128( __m128c( y ), 16 - imm ) ) )
-#define _mm_sld_si128( x, y, imm )			_mm_or_si128( _mm_srli_si128( x, imm ), _mm_slli_si128( y, 16 - imm ) )
-
-// floating-point reciprocal with close to full precision
-ICF __m128 _mm_rcp32_ps( __m128 x )
-{
-	__m128 r = _mm_rcp_ps( x );		// _mm_rcp_ps() has 12 bits of precision
-	r = _mm_sub_ps( _mm_add_ps( r, r ), _mm_mul_ps( _mm_mul_ps( x, r ), r ) );
-	r = _mm_sub_ps( _mm_add_ps( r, r ), _mm_mul_ps( _mm_mul_ps( x, r ), r ) );
-	return r;
-}
-
 
 //////////////////////////////////////////////////////////////////////////
 // tables to calculate view-frustum bounds in world space
@@ -160,111 +101,6 @@ void XRMatrixOrthoOffCenterLH(Fmatrix *pout, float l, float r, float b, float t,
 
 void XRMatrixInverse(Fmatrix *pout, float *pdeterminant, const Fmatrix &pm)
 {
-#ifdef USE_INTRINSICS
-    const __m128 r0 = _mm_loadu_ps( &pm._11 );
-    const __m128 r1 = _mm_loadu_ps( &pm._21 );
-    const __m128 r2 = _mm_loadu_ps( &pm._31 );
-    const __m128 r3 = _mm_loadu_ps( &pm._41 );
-	
-	// rXuY = row X rotated up by Y floats.
-	const __m128 r0u1 = _mm_perm_ps( r0, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 r0u2 = _mm_perm_ps( r0, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 r0u3 = _mm_perm_ps( r0, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	
-	const __m128 r1u1 = _mm_perm_ps( r1, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 r1u2 = _mm_perm_ps( r1, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 r1u3 = _mm_perm_ps( r1, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	
-	const __m128 r2u1 = _mm_perm_ps( r2, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 r2u2 = _mm_perm_ps( r2, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 r2u3 = _mm_perm_ps( r2, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	
-	const __m128 r3u1 = _mm_perm_ps( r3, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 r3u2 = _mm_perm_ps( r3, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 r3u3 = _mm_perm_ps( r3, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	
-	const __m128 m_r2u2_r3u3      						= _mm_mul_ps( r2u2, r3u3 );
-	const __m128 m_r1u1_r2u2_r3u3 						= _mm_mul_ps( r1u1, m_r2u2_r3u3 );
-	const __m128 m_r2u3_r3u1							= _mm_mul_ps( r2u3, r3u1 );
-	const __m128 a_m_r1u2_r2u3_r3u1_m_r1u1_r2u2_r3u3	= _mm_madd_ps( r1u2, m_r2u3_r3u1, m_r1u1_r2u2_r3u3 );
-	const __m128 m_r2u1_r3u2							= _mm_perm_ps( m_r2u2_r3u3, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	const __m128 pos_part_det3x3_r0						= _mm_madd_ps( r1u3, m_r2u1_r3u2, a_m_r1u2_r2u3_r3u1_m_r1u1_r2u2_r3u3 );
-	const __m128 m_r2u3_r3u2							= _mm_mul_ps( r2u3, r3u2 );
-	const __m128 m_r1u1_r2u3_r3u2						= _mm_mul_ps( r1u1, m_r2u3_r3u2 );
-	const __m128 m_r2u1_r3u3							= _mm_perm_ps( m_r2u3_r3u1, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 a_m_r1u2_r2u1_r3u3_m_r1u1_r2u3_r3u2	= _mm_madd_ps( r1u2, m_r2u1_r3u3, m_r1u1_r2u3_r3u2 );
-	const __m128 m_r2u2_r3u1							= _mm_perm_ps( m_r2u3_r3u2, _MM_SHUFFLE( 0, 3, 2, 1 ) );
-	const __m128 neg_part_det3x3_r0						= _mm_madd_ps( r1u3, m_r2u2_r3u1, a_m_r1u2_r2u1_r3u3_m_r1u1_r2u3_r3u2 );
-	const __m128 det3x3_r0 								= _mm_sub_ps( pos_part_det3x3_r0, neg_part_det3x3_r0 );
-	
-	const __m128 m_r0u1_r2u2_r3u3 						= _mm_mul_ps( r0u1, m_r2u2_r3u3 );
-	const __m128 a_m_r0u2_r2u3_r3u1_m_r0u1_r2u2_r3u3	= _mm_madd_ps( r0u2, m_r2u3_r3u1, m_r0u1_r2u2_r3u3 );
-	const __m128 pos_part_det3x3_r1						= _mm_madd_ps( r0u3, m_r2u1_r3u2, a_m_r0u2_r2u3_r3u1_m_r0u1_r2u2_r3u3 );
-	const __m128 m_r0u1_r2u3_r3u2						= _mm_mul_ps( r0u1, m_r2u3_r3u2 );
-	const __m128 a_m_r0u2_r2u1_r3u3_m_r0u1_r2u3_r3u2	= _mm_madd_ps( r0u2, m_r2u1_r3u3, m_r0u1_r2u3_r3u2 );
-	const __m128 neg_part_det3x3_r1						= _mm_madd_ps( r0u3, m_r2u2_r3u1, a_m_r0u2_r2u1_r3u3_m_r0u1_r2u3_r3u2 );
-	const __m128 det3x3_r1 								= _mm_sub_ps( pos_part_det3x3_r1, neg_part_det3x3_r1 );
-	
-	const __m128 m_r0u1_r1u2      						= _mm_mul_ps( r0u1, r1u2 );
-	const __m128 m_r0u1_r1u2_r2u3 						= _mm_mul_ps( m_r0u1_r1u2, r2u3 );
-	const __m128 m_r0u2_r1u3							= _mm_perm_ps( m_r0u1_r1u2, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 a_m_r0u2_r1u3_r2u1_m_r0u1_r1u2_r2u3	= _mm_madd_ps( m_r0u2_r1u3, r2u1, m_r0u1_r1u2_r2u3 );
-	const __m128 m_r0u3_r1u1							= _mm_mul_ps( r0u3, r1u1 );
-	const __m128 pos_part_det3x3_r3						= _mm_madd_ps( m_r0u3_r1u1, r2u2, a_m_r0u2_r1u3_r2u1_m_r0u1_r1u2_r2u3 );
-	const __m128 m_r0u1_r1u3							= _mm_perm_ps( m_r0u3_r1u1, _MM_SHUFFLE( 1, 0, 3, 2 ) );
-	const __m128 m_r0u1_r1u3_r2u2						= _mm_mul_ps( m_r0u1_r1u3, r2u2 );
-	const __m128 m_r0u2_r1u1							= _mm_mul_ps( r0u2, r1u1 );
-	const __m128 a_m_r0u2_r1u1_r2u3_m_r0u1_r1u3_r2u2	= _mm_madd_ps( m_r0u2_r1u1, r2u3, m_r0u1_r1u3_r2u2 );
-	const __m128 m_r0u3_r1u2							= _mm_perm_ps( m_r0u2_r1u1, _MM_SHUFFLE( 2, 1, 0, 3 ) );
-	const __m128 neg_part_det3x3_r3						= _mm_madd_ps( m_r0u3_r1u2, r2u1, a_m_r0u2_r1u1_r2u3_m_r0u1_r1u3_r2u2 );
-	const __m128 det3x3_r3 								= _mm_sub_ps( pos_part_det3x3_r3, neg_part_det3x3_r3 );
-	
-	const __m128 m_r0u1_r1u2_r3u3 						= _mm_mul_ps( m_r0u1_r1u2, r3u3 );
-	const __m128 a_m_r0u2_r1u3_r3u1_m_r0u1_r1u2_r3u3	= _mm_madd_ps( m_r0u2_r1u3, r3u1, m_r0u1_r1u2_r3u3 );
-	const __m128 pos_part_det3x3_r2						= _mm_madd_ps( m_r0u3_r1u1, r3u2, a_m_r0u2_r1u3_r3u1_m_r0u1_r1u2_r3u3 );
-	const __m128 m_r0u1_r1u3_r3u2						= _mm_mul_ps( m_r0u1_r1u3, r3u2 );
-	const __m128 a_m_r0u2_r1u1_r3u3_m_r0u1_r1u3_r3u2	= _mm_madd_ps( m_r0u2_r1u1, r3u3, m_r0u1_r1u3_r3u2 );
-	const __m128 neg_part_det3x3_r2						= _mm_madd_ps( m_r0u3_r1u2, r3u1, a_m_r0u2_r1u1_r3u3_m_r0u1_r1u3_r3u2 );
-	const __m128 det3x3_r2 								= _mm_sub_ps( pos_part_det3x3_r2, neg_part_det3x3_r2 );
-	
-	const __m128 c_zero		= _mm_setzero_ps();
-	const __m128 c_mask		= _mm_cmpeq_ps( c_zero, c_zero );
-	const __m128 c_signmask	= _mm_castsi128_ps( _mm_slli_epi32( _mm_castps_si128( c_mask ), 31 ) );
-	const __m128 c_znzn		= _mm_unpacklo_ps( c_zero, c_signmask );
-	const __m128 c_nznz		= _mm_unpacklo_ps( c_signmask, c_zero );
-	
-	const __m128 cofactor_r0 = _mm_xor_ps( det3x3_r0, c_znzn );
-	const __m128 cofactor_r1 = _mm_xor_ps( det3x3_r1, c_nznz );
-	const __m128 cofactor_r2 = _mm_xor_ps( det3x3_r2, c_znzn );
-	const __m128 cofactor_r3 = _mm_xor_ps( det3x3_r3, c_nznz );
-	
-	const __m128 dot0	= _mm_mul_ps( r0, cofactor_r0 );
-	const __m128 dot1 	= _mm_add_ps( dot0, _mm_perm_ps( dot0, _MM_SHUFFLE( 2, 1, 0, 3 ) ) );
-	const __m128 det	= _mm_add_ps( dot1, _mm_perm_ps( dot1, _MM_SHUFFLE( 1, 0, 3, 2 ) ) );
-	
-	const __m128 absDet	= _mm_andnot_ps( c_signmask, det );
-	if( _mm_movemask_ps( _mm_cmplt_ps( absDet, vector_float_inverse_epsilon ) ) & 15 )
-	{
-		return;
-	}
-	
-	const __m128 rcpDet	= _mm_rcp32_ps( det );
-	
-	const __m128 hi_part_r0_r2 = _mm_unpacklo_ps( cofactor_r0, cofactor_r2 );
-	const __m128 lo_part_r0_r2 = _mm_unpackhi_ps( cofactor_r0, cofactor_r2 );
-	const __m128 hi_part_r1_r3 = _mm_unpacklo_ps( cofactor_r1, cofactor_r3 );
-	const __m128 lo_part_r1_r3 = _mm_unpackhi_ps( cofactor_r1, cofactor_r3 );
-	
-	const __m128 adjoint_r0    = _mm_unpacklo_ps( hi_part_r0_r2, hi_part_r1_r3 );
-	const __m128 adjoint_r1    = _mm_unpackhi_ps( hi_part_r0_r2, hi_part_r1_r3 );
-	const __m128 adjoint_r2    = _mm_unpacklo_ps( lo_part_r0_r2, lo_part_r1_r3 );
-	const __m128 adjoint_r3    = _mm_unpackhi_ps( lo_part_r0_r2, lo_part_r1_r3 );
-	
-	_mm_storeu_ps( &pout->_11, _mm_mul_ps( adjoint_r0, rcpDet ) );
-	_mm_storeu_ps( &pout->_21, _mm_mul_ps( adjoint_r1, rcpDet ) );
-	_mm_storeu_ps( &pout->_31, _mm_mul_ps( adjoint_r2, rcpDet ) );
-	_mm_storeu_ps( &pout->_41, _mm_mul_ps( adjoint_r3, rcpDet ) );
-#else
     float det, t[3], v[16];
     unsigned int i, j;
     
@@ -330,7 +166,6 @@ void XRMatrixInverse(Fmatrix *pout, float *pdeterminant, const Fmatrix &pm)
     for (i = 0; i < 4; i++)
         for (j = 0; j < 4; j++)
             pout->m[i][j] = v[4 * i + j] * det;
-#endif
 }
 
 //////////////////////////////////////////////////////////////////////////
