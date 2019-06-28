@@ -1,5 +1,10 @@
-openxray (1.6.02-12-ubuntu1) disco; urgency=medium
+openxray (1.6.02-416-ubuntu1) bionic; urgency=medium
 
+  * fixed hang at exit
+  * -no_glcontext key for fix crash on some Nvidia drivers
+  * more smart link manage
+  * update to build 416
+  * update to build 415
   * move shlib to /usr/lib
   * try auto dep
 
