@@ -46,10 +46,21 @@ static inline float XRPlaneDotCoord(const Fvector4 &pp, const Fvector3 &pv)
     return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) + (pp.z) );
 }
 
+static inline float XRPlaneDotCoord(const glm::vec4 &pp, const glm::vec3 &pv)
+{
+    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) + (pp.z) );
+}
+
 static inline float XRPlaneDotNormal(const Fvector4 &pp, const Fvector3 &pv)
 {
     return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) );
 }
+
+static inline float XRPlaneDotNormal(const glm::vec4 &pp, const glm::vec3 &pv)
+{
+    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) );
+}
+
 
 glm::vec3 XRVec3TransformNormal(const glm::vec3 &pv, const Fmatrix &pm)
 {
@@ -262,7 +273,7 @@ Frustum::Frustum(const glm::mat4 *matrix)
 
     int p;
 
-    for (p = 0; p < 6; p++)
+    for (p = 0; p < 6; p++) // normalize the planes
     {
         camPlanes[p] = glm::normalize(planes[p]);
         // build a bit-field that will tell us the indices for the nearest and farthest vertices from each plane...
@@ -292,6 +303,20 @@ Fvector3 wform(Fmatrix& m, Fvector3 const& v)
     return r3;
 }
 
+Fvector3 wform(Fmatrix& m, glm::vec3 const& v)
+{
+    Fvector4 r;
+    r.x = v.x * m._11 + v.y * m._21 + v.z * m._31 + m._41;
+    r.y = v.x * m._12 + v.y * m._22 + v.z * m._32 + m._42;
+    r.z = v.x * m._13 + v.y * m._23 + v.z * m._33 + m._43;
+    r.w = v.x * m._14 + v.y * m._24 + v.z * m._34 + m._44;
+    // VERIFY		(r.w>0.f);
+    float invW = 1.0f / r.w;
+    Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
+    return r3;
+}
+
+
 Fvector3 wform(glm::mat4& m, Fvector3 const& v)
 {
     Fvector4 r;
@@ -314,15 +339,15 @@ const float _eps = 0.000001f;
 struct DumbClipper
 {
     CFrustum frustum;
-    xr_vector<Fvector4> planes;
+    xr_vector<glm::vec4> planes;
 
-    BOOL clip(Fvector3& p0, Fvector3& p1) // returns TRUE if result meaningfull
+    BOOL clip(glm::vec3& p0, glm::vec3& p1) // returns TRUE if result meaningfull
     {
         float denum;
-        Fvector3 D;
+        glm::vec3 D;
         for (int it = 0; it < int(planes.size()); it++)
         {
-            const Fvector4 P = planes [it];
+            const glm::vec4 P = planes [it];
             float cls0 = XRPlaneDotCoord(P, p0);
             float cls1 = XRPlaneDotCoord(P, p1);
             if (cls0 > 0 && cls1 > 0) return false; // fully outside
@@ -330,36 +355,24 @@ struct DumbClipper
             if (cls0 > 0)
             {
                 // clip p0
-                D.set(p1);
-                D.sub(p0);
+                D = p1 - p0;
                 denum = XRPlaneDotNormal(P, D);
-                if (denum != 0)
-                {
-                    D.invert();
-                    D.mul(cls0 / denum);
-                    p0.add(D);
-                }
+                if (denum != 0) p0 += - D * cls0 / denum;
             }
             if (cls1 > 0)
             {
                 // clip p1
-                D.set(p0);
-                D.sub(p1);
+                D = p0 - p1;
                 denum = XRPlaneDotNormal(P, D);
-                if (denum != 0)
-                {
-                    D.invert();
-                    D.mul(cls1 / denum);
-                    p1.add(D);
-                }
+                if (denum != 0) p1 += - D * cls1 / denum;
             }
         }
         return true;
     }
 
-    Fvector3 point(Fbox& bb, int i) const
+    glm::vec3 point(Fbox& bb, int i) const
     {
-        return {i & 1 ? bb.vMin.x : bb.vMax.x, i & 2 ? bb.vMin.y : bb.vMax.y, i & 4 ? bb.vMin.z : bb.vMax.z};
+        return glm::vec3(i & 1 ? bb.vMin.x : bb.vMax.x, i & 2 ? bb.vMin.y : bb.vMax.y, i & 4 ? bb.vMin.z : bb.vMax.z);
     }
 
     Fbox clipped_AABB(xr_vector<Fbox>& src, Fmatrix& xf)
@@ -377,7 +390,7 @@ struct DumbClipper
             case fcvFully:
                 for (int c = 0; c < 8; c++)
                 {
-                    Fvector3 p0 = point(bb, c);
+                    glm::vec3 p0 = point(bb, c);
                     Fvector x0 = wform(xf, p0);
                     result.modify(x0);
                 }
@@ -388,8 +401,8 @@ struct DumbClipper
                     for (int c1 = 0; c1 < 8; c1++)
                     {
                         if (c0 == c1) continue;
-                        Fvector3 p0 = point(bb, c0);
-                        Fvector3 p1 = point(bb, c1);
+                        glm::vec3 p0 = point(bb, c0);
+                        glm::vec3 p1 = point(bb, c1);
                         if (!clip(p0, p1)) continue;
                         Fvector x0 = wform(xf, p0);
                         Fvector x1 = wform(xf, p1);
