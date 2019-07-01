@@ -41,44 +41,11 @@ static int facetable[6][4] = {
 #define ALMOST_ZERO(F) ((FLT_AS_DW(F) & 0x7f800000L)==0)
 #define IS_SPECIAL(F) ((FLT_AS_DW(F) & 0x7f800000L)==0x7f800000L)
 
-static inline float XRPlaneDotCoord(const Fvector4 &pp, const Fvector3 &pv)
-{
-    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) + (pp.z) );
-}
-
-static inline float XRPlaneDotCoord(const glm::vec4 &pp, const glm::vec3 &pv)
-{
-    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) + (pp.z) );
-}
-
-static inline float XRPlaneDotNormal(const Fvector4 &pp, const Fvector3 &pv)
-{
-    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) );
-}
-
-static inline float XRPlaneDotNormal(const glm::vec4 &pp, const glm::vec3 &pv)
-{
-    return ( (pp.x) * (pv.x) + (pp.y) * (pv.y) + (pp.z) * (pv.z) );
-}
-
-
 glm::vec3 XRVec3TransformNormal(const glm::vec3 &pv, const Fmatrix &pm)
 {
     return glm::vec3(pm.m[0][0] * pv.x + pm.m[1][0] * pv.y + pm.m[2][0] * pv.z,
     pm.m[0][1] * pv.x + pm.m[1][1] * pv.y + pm.m[2][1] * pv.z,
     pm.m[0][2] * pv.x + pm.m[1][2] * pv.y + pm.m[2][2] * pv.z);
-}
-
-void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const Fmatrix& matrix, unsigned int elements)
-{
-    for (unsigned int i = 0; i < elements; ++i)
-    {
-        float norm = matrix.m[0][3] * in[i].x + matrix.m[1][3] * in[i].y + matrix.m[2][3] *in[i].z + matrix.m[3][3];
-    
-        out[i].x = (matrix.m[0][0] * in[i].x + matrix.m[1][0] * in[i].y + matrix.m[2][0] * in[i].z + matrix.m[3][0]) / norm;
-        out[i].y = (matrix.m[0][1] * in[i].x + matrix.m[1][1] * in[i].y + matrix.m[2][1] * in[i].z + matrix.m[3][1]) / norm;
-        out[i].z = (matrix.m[0][2] * in[i].x + matrix.m[1][2] * in[i].y + matrix.m[2][2] * in[i].z + matrix.m[3][2]) / norm;
-    }
 }
 
 void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const glm::mat4& matrix, unsigned int elements)
@@ -366,22 +333,22 @@ struct DumbClipper
         for (int it = 0; it < int(planes.size()); it++)
         {
             const glm::vec4 P = planes [it];
-            float cls0 = XRPlaneDotCoord(P, p0);
-            float cls1 = XRPlaneDotCoord(P, p1);
+            float cls0 = glm::dot(P, glm::vec4(p0, 1));
+            float cls1 = glm::dot(P, glm::vec4(p1, 1));
             if (cls0 > 0 && cls1 > 0) return false; // fully outside
 
             if (cls0 > 0)
             {
                 // clip p0
                 D = p1 - p0;
-                denum = XRPlaneDotNormal(P, D);
+                denum = glm::dot(P, glm::vec4(D, 0));
                 if (denum != 0) p0 += - D * cls0 / denum;
             }
             if (cls1 > 0)
             {
                 // clip p1
                 D = p0 - p1;
-                denum = XRPlaneDotNormal(P, D);
+                denum = glm::dot(P, glm::vec4(D, 0));
                 if (denum != 0) p1 += - D * cls1 / denum;
             }
         }
