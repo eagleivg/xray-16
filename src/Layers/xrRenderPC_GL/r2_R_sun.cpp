@@ -19,24 +19,6 @@ float OLES_SUN_LIMIT_27_01_07 = 100.f;
 const float MAP_SIZE_START = 6.f;
 const float MAP_GROW_FACTOR = 4.f;
 
-// DG: _CRT_ALIGN seems to be MSVC specific, so provide implementation..
-#ifndef _CRT_ALIGN
-#if defined(__GNUC__) // also applies for clang
-#define _CRT_ALIGN(x) __attribute__ ((__aligned__ (x)))
-#elif defined(_MSC_VER) // also for MSVC, just to be sure
-#define _CRT_ALIGN(x) __declspec(align(x))
-#endif
-#endif
-// DG: make sure __declspec(intrin_type) is only used on MSVC (it's not available on GCC etc
-#ifdef _MSC_VER
-#define DECLSPEC_INTRINTYPE __declspec( intrin_type )
-#else
-#define DECLSPEC_INTRINTYPE
-#endif
-// DG end
-
-#define RENDER_MATRIX_INVERSE_EPSILON		1e-16f	// JDC: changed from 1e-14f to allow full wasteland parallel light projections to invert
-
 //////////////////////////////////////////////////////////////////////////
 // tables to calculate view-frustum bounds in world space
 // note: D3D uses [0..1] range for Z
@@ -184,33 +166,25 @@ struct BoundingBox
     glm::vec3 minPt;
     glm::vec3 maxPt;
 
-    BoundingBox()
-    {
-        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
-        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
-    }
+    BoundingBox(): minPt(1e33f, 1e33f, 1e33f), maxPt(-1e33f, -1e33f, -1e33f) { }
     BoundingBox(const BoundingBox& other): minPt(other.minPt), maxPt(other.maxPt) { }
 
-    explicit BoundingBox(const glm::vec3* points, UINT n)
+    explicit BoundingBox(const glm::vec3* points, UINT n): minPt(1e33f, 1e33f, 1e33f), maxPt(-1e33f, -1e33f, -1e33f)
     {
-        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
-        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < n; i++)
             Merge(&points[i]);
     }
 
-    explicit BoundingBox(const std::vector<glm::vec3>* points)
+    explicit BoundingBox(const std::vector<glm::vec3>* points): minPt(1e33f, 1e33f, 1e33f),
+                                                                maxPt(-1e33f, -1e33f, -1e33f)
     {
-        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
-        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < points->size(); i++)
             Merge(&(*points)[i]);
     }
 
-    explicit BoundingBox(const std::vector<BoundingBox>* boxes)
+    explicit BoundingBox(const std::vector<BoundingBox>* boxes): minPt(1e33f, 1e33f, 1e33f),
+                                                                 maxPt(-1e33f, -1e33f, -1e33f)
     {
-        minPt = glm::vec3(1e33f, 1e33f, 1e33f);
-        maxPt = glm::vec3(-1e33f, -1e33f, -1e33f);
         for (unsigned int i = 0; i < boxes->size(); i++)
         {
             Merge(&(*boxes)[i].maxPt);
@@ -218,10 +192,7 @@ struct BoundingBox
         }
     }
 
-    void Centroid(glm::vec3* vec) const
-    {
-        *vec = (minPt + maxPt) * 0.5f; 
-    }
+    void Centroid(glm::vec3* vec) const { *vec = 0.5f * (minPt + maxPt); }
 
     void Merge(const glm::vec3* vec)
     {
@@ -231,11 +202,6 @@ struct BoundingBox
         maxPt.x = _max(maxPt.x, vec->x);
         maxPt.y = _max(maxPt.y, vec->y);
         maxPt.z = _max(maxPt.z, vec->z);
-    }
-
-    Fvector3 Point(int i) const
-    {
-        return {i & 1 ? minPt.x : maxPt.x, i & 2 ? minPt.y : maxPt.y, i & 4 ? minPt.z : maxPt.z};
     }
 };
 
@@ -265,10 +231,7 @@ static inline BOOL PlaneIntersection(glm::vec3* intersectPt, const glm::vec4& p0
     n2_n0 *= p1.w;
     n0_n1 *= p2.w;
 
-    n1_n2 += n2_n0;
-    n1_n2 += n0_n1;
-    n1_n2 = -n1_n2 * secTheta;
-    *intersectPt = n1_n2;
+    *intersectPt = -(n1_n2 + n2_n0 + n0_n1) * secTheta;
     return TRUE;
 }
 
