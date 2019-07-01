@@ -44,11 +44,7 @@ static int facetable[6][4] = {
 void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const glm::mat4& matrix, unsigned int elements)
 {
     for (unsigned int i = 0; i < elements; ++i)
-    {
-        glm::mat4 translate = glm::translate(matrix, in[i]);
-        glm::vec4 vector(1.f,1.f,1.f,1.f);
-        out[i] = glm::vec3(translate * vector);
-    }
+        out[i] = glm::vec3(glm::translate(matrix, in[i]) * glm::vec4(1.f,1.f,1.f,1.f));
 }
 
 void XRMatrixOrthoOffCenterLH(Fmatrix *pout, float l, float r, float b, float t, float zn, float zf)
@@ -64,71 +60,10 @@ void XRMatrixOrthoOffCenterLH(Fmatrix *pout, float l, float r, float b, float t,
 
 void XRMatrixInverse(Fmatrix *pout, float *pdeterminant, const Fmatrix &pm)
 {
-    float det, t[3], v[16];
-    unsigned int i, j;
+    glm::mat4 out = glm::inverse(glm::make_mat4x4(&pm.m[0][0]));
     
-    t[0] = pm.m[2][2] * pm.m[3][3] - pm.m[2][3] * pm.m[3][2];
-    t[1] = pm.m[1][2] * pm.m[3][3] - pm.m[1][3] * pm.m[3][2];
-    t[2] = pm.m[1][2] * pm.m[2][3] - pm.m[1][3] * pm.m[2][2];
-    v[0] = pm.m[1][1] * t[0] - pm.m[2][1] * t[1] + pm.m[3][1] * t[2];
-    v[4] = -pm.m[1][0] * t[0] + pm.m[2][0] * t[1] - pm.m[3][0] * t[2];
-
-    t[0] = pm.m[1][0] * pm.m[2][1] - pm.m[2][0] * pm.m[1][1];
-    t[1] = pm.m[1][0] * pm.m[3][1] - pm.m[3][0] * pm.m[1][1];
-    t[2] = pm.m[2][0] * pm.m[3][1] - pm.m[3][0] * pm.m[2][1];
-    v[8] = pm.m[3][3] * t[0] - pm.m[2][3] * t[1] + pm.m[1][3] * t[2];
-    v[12] = -pm.m[3][2] * t[0] + pm.m[2][2] * t[1] - pm.m[1][2] * t[2];
-
-    det = pm.m[0][0] * v[0] + pm.m[0][1] * v[4] +
-        pm.m[0][2] * v[8] + pm.m[0][3] * v[12];
-    if (det == 0.0f)
-        return;
-    if (pdeterminant)
-        *pdeterminant = det;
-
-    t[0] = pm.m[2][2] * pm.m[3][3] - pm.m[2][3] * pm.m[3][2];
-    t[1] = pm.m[0][2] * pm.m[3][3] - pm.m[0][3] * pm.m[3][2];
-    t[2] = pm.m[0][2] * pm.m[2][3] - pm.m[0][3] * pm.m[2][2];
-    v[1] = -pm.m[0][1] * t[0] + pm.m[2][1] * t[1] - pm.m[3][1] * t[2];
-    v[5] = pm.m[0][0] * t[0] - pm.m[2][0] * t[1] + pm.m[3][0] * t[2];
-
-    t[0] = pm.m[0][0] * pm.m[2][1] - pm.m[2][0] * pm.m[0][1];
-    t[1] = pm.m[3][0] * pm.m[0][1] - pm.m[0][0] * pm.m[3][1];
-    t[2] = pm.m[2][0] * pm.m[3][1] - pm.m[3][0] * pm.m[2][1];
-    v[9] = -pm.m[3][3] * t[0] - pm.m[2][3] * t[1]- pm.m[0][3] * t[2];
-    v[13] = pm.m[3][2] * t[0] + pm.m[2][2] * t[1] + pm.m[0][2] * t[2];
-
-    t[0] = pm.m[1][2] * pm.m[3][3] - pm.m[1][3] * pm.m[3][2];
-    t[1] = pm.m[0][2] * pm.m[3][3] - pm.m[0][3] * pm.m[3][2];
-    t[2] = pm.m[0][2] * pm.m[1][3] - pm.m[0][3] * pm.m[1][2];
-    v[2] = pm.m[0][1] * t[0] - pm.m[1][1] * t[1] + pm.m[3][1] * t[2];
-    v[6] = -pm.m[0][0] * t[0] + pm.m[1][0] * t[1] - pm.m[3][0] * t[2];
-
-    t[0] = pm.m[0][0] * pm.m[1][1] - pm.m[1][0] * pm.m[0][1];
-    t[1] = pm.m[3][0] * pm.m[0][1] - pm.m[0][0] * pm.m[3][1];
-    t[2] = pm.m[1][0] * pm.m[3][1] - pm.m[3][0] * pm.m[1][1];
-    v[10] = pm.m[3][3] * t[0] + pm.m[1][3] * t[1] + pm.m[0][3] * t[2];
-    v[14] = -pm.m[3][2] * t[0] - pm.m[1][2] * t[1] - pm.m[0][2] * t[2];
-
-    t[0] = pm.m[1][2] * pm.m[2][3] - pm.m[1][3] * pm.m[2][2];
-    t[1] = pm.m[0][2] * pm.m[2][3] - pm.m[0][3] * pm.m[2][2];
-    t[2] = pm.m[0][2] * pm.m[1][3] - pm.m[0][3] * pm.m[1][2];
-    v[3] = -pm.m[0][1] * t[0] + pm.m[1][1] * t[1] - pm.m[2][1] * t[2];
-    v[7] = pm.m[0][0] * t[0] - pm.m[1][0] * t[1] + pm.m[2][0] * t[2];
-
-    v[11] = -pm.m[0][0] * (pm.m[1][1] * pm.m[2][3] - pm.m[1][3] * pm.m[2][1]) +
-        pm.m[1][0] * (pm.m[0][1] * pm.m[2][3] - pm.m[0][3] * pm.m[2][1]) -
-        pm.m[2][0] * (pm.m[0][1] * pm.m[1][3] - pm.m[0][3] * pm.m[1][1]);
-
-    v[15] = pm.m[0][0] * (pm.m[1][1] * pm.m[2][2] - pm.m[1][2] * pm.m[2][1]) -
-        pm.m[1][0] * (pm.m[0][1] * pm.m[2][2] - pm.m[0][2] * pm.m[2][1]) +
-        pm.m[2][0] * (pm.m[0][1] * pm.m[1][2] - pm.m[0][2] * pm.m[1][1]);
-
-    det = 1.0f / det;
-
-    for (i = 0; i < 4; i++)
-        for (j = 0; j < 4; j++)
-            pout->m[i][j] = v[4 * i + j] * det;
+    *pout = *(Fmatrix*)glm::value_ptr(out);
+    return;
 }
 
 //////////////////////////////////////////////////////////////////////////
