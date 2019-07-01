@@ -81,6 +81,16 @@ void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const Fmatri
     }
 }
 
+void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const glm::mat4& matrix, unsigned int elements)
+{
+    for (unsigned int i = 0; i < elements; ++i)
+    {
+        glm::mat4 translate = glm::translate(matrix, in[i]);
+        glm::vec4 vector(1.f,1.f,1.f,1.f);
+        out[i] = glm::vec3(translate * vector);
+    }
+}
+
 void XRMatrixOrthoOffCenterLH(Fmatrix *pout, float l, float r, float b, float t, float zn, float zf)
 {
     pout->identity();
@@ -299,8 +309,7 @@ Fvector3 wform(Fmatrix& m, Fvector3 const& v)
     r.w = v.x * m._14 + v.y * m._24 + v.z * m._34 + m._44;
     // VERIFY		(r.w>0.f);
     float invW = 1.0f / r.w;
-    Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
-    return r3;
+    return {r.x * invW, r.y * invW, r.z * invW};
 }
 
 Fvector3 wform(Fmatrix& m, glm::vec3 const& v)
@@ -312,10 +321,8 @@ Fvector3 wform(Fmatrix& m, glm::vec3 const& v)
     r.w = v.x * m._14 + v.y * m._24 + v.z * m._34 + m._44;
     // VERIFY		(r.w>0.f);
     float invW = 1.0f / r.w;
-    Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
-    return r3;
+    return {r.x * invW, r.y * invW, r.z * invW};
 }
-
 
 Fvector3 wform(glm::mat4& m, Fvector3 const& v)
 {
@@ -326,8 +333,19 @@ Fvector3 wform(glm::mat4& m, Fvector3 const& v)
     r.w = v.x * m[0][3] + v.y * m[1][3] + v.z * m[2][3] + m[3][3];
     // VERIFY		(r.w>0.f);
     float invW = 1.0f / r.w;
-    Fvector3 r3 = {r.x * invW, r.y * invW, r.z * invW};
-    return r3;
+    return {r.x * invW, r.y * invW, r.z * invW};
+}
+
+Fvector3 wform(glm::mat4& m, glm::vec3 const& v)
+{
+    Fvector4 r;
+    r.x = v.x * m[0][0] + v.y * m[1][0] + v.z * m[2][0] + m[3][0];
+    r.y = v.x * m[0][1] + v.y * m[1][1] + v.z * m[2][1] + m[3][1];
+    r.z = v.x * m[0][2] + v.y * m[1][2] + v.z * m[2][2] + m[3][2];
+    r.w = v.x * m[0][3] + v.y * m[1][3] + v.z * m[2][3] + m[3][3];
+    // VERIFY		(r.w>0.f);
+    float invW = 1.0f / r.w;
+    return {r.x * invW, r.y * invW, r.z * invW};
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -375,7 +393,7 @@ struct DumbClipper
         return glm::vec3(i & 1 ? bb.vMin.x : bb.vMax.x, i & 2 ? bb.vMin.y : bb.vMax.y, i & 4 ? bb.vMin.z : bb.vMax.z);
     }
 
-    Fbox clipped_AABB(xr_vector<Fbox>& src, Fmatrix& xf)
+    Fbox clipped_AABB(xr_vector<Fbox>& src, glm::mat4& xf)
     {
         Fbox3 result;
         result.invalidate();
@@ -419,12 +437,10 @@ struct DumbClipper
 
 xr_vector<Fbox> s_casters;
 
-Fvector2 BuildTSMProjectionMatrix_caster_depth_bounds(Fmatrix& lightSpaceBasis)
+glm::vec2 BuildTSMProjectionMatrix_caster_depth_bounds(glm::mat4& lightSpaceBasis)
 {
     float min_z = 1e32f, max_z = -1e32f;
-    Fmatrix minmax_xf;
-    minmax_xf.mul(Device.mView, lightSpaceBasis);
-    Fmatrix& minmax_xform = minmax_xf;
+    glm::mat4 minmax_xform = glm::make_mat4x4(&Device.mView.m[0][0]) * lightSpaceBasis;
     for (u32 c = 0; c < s_casters.size(); c++)
     {
         Fvector3 pt;
@@ -436,14 +452,14 @@ Fvector2 BuildTSMProjectionMatrix_caster_depth_bounds(Fmatrix& lightSpaceBasis)
             max_z = _max(max_z, pt.z);
         }
     }
-    return {min_z, max_z};
+    return glm::vec2(min_z, max_z);
 }
 
 void CRender::render_sun()
 {
     PIX_EVENT(render_sun);
     light* fuckingsun = static_cast<light*>(Lights.sun._get());
-    Fmatrix m_LightViewProj;
+    glm::mat4 m_LightViewProj;
 
     // calculate view-frustum bounds in world space
     glm::mat4 ex_full_inverse, ex_full, ex_project;
@@ -460,7 +476,7 @@ void CRender::render_sun()
     xr_vector<Fplane> cull_planes;
     Fvector3 cull_COP;
     CSector* cull_sector;
-    Fmatrix cull_xform;
+    glm::mat4 cull_xform;
     {
         FPU::m64r();
         // Lets begin from base frustum
@@ -533,7 +549,9 @@ void CRender::render_sun()
                                    bb.vMin.z - tweak_ortho_xform_initial_offs, bb.vMax.z);
 
         // full-xform
-        cull_xform.mul(mdir_Project, mdir_View);
+        Fmatrix tmp_mul;
+        tmp_mul.mul(mdir_Project, mdir_View);
+        cull_xform = glm::make_mat4x4(&tmp_mul.m[0][0]);
         FPU::m24r();
     }
 
@@ -550,7 +568,7 @@ void CRender::render_sun()
     xr_vector<Fbox3>& s_receivers = main_coarse_structure;
     s_casters.reserve(s_receivers.size());
     set_Recorder(&s_casters);
-    r_dsgraph_render_subspace(cull_sector, &cull_frustum, cull_xform, cull_COP, TRUE);
+    r_dsgraph_render_subspace(cull_sector, &cull_frustum, *(Fmatrix*)glm::value_ptr(cull_xform), cull_COP, TRUE);
 
     // IGNORE PORTALS
     if (ps_r2_ls_flags.test(R2FLAG_SUN_IGNORE_PORTALS))
@@ -608,23 +626,23 @@ void CRender::render_sun()
         leftVector = glm::normalize(leftVector);
         viewVector = glm::cross(upVector, leftVector);
 
-        Fmatrix lightSpaceBasis;
-        lightSpaceBasis._11 = leftVector.x;
-        lightSpaceBasis._12 = viewVector.x;
-        lightSpaceBasis._13 = -upVector.x;
-        lightSpaceBasis._14 = 0.f;
-        lightSpaceBasis._21 = leftVector.y;
-        lightSpaceBasis._22 = viewVector.y;
-        lightSpaceBasis._23 = -upVector.y;
-        lightSpaceBasis._24 = 0.f;
-        lightSpaceBasis._31 = leftVector.z;
-        lightSpaceBasis._32 = viewVector.z;
-        lightSpaceBasis._33 = -upVector.z;
-        lightSpaceBasis._34 = 0.f;
-        lightSpaceBasis._41 = 0.f;
-        lightSpaceBasis._42 = 0.f;
-        lightSpaceBasis._43 = 0.f;
-        lightSpaceBasis._44 = 1.f;
+        glm::mat4 lightSpaceBasis;
+        lightSpaceBasis[0][0] = leftVector.x;
+        lightSpaceBasis[0][1] = viewVector.x;
+        lightSpaceBasis[0][2] = -upVector.x;
+        lightSpaceBasis[0][3] = 0.f;
+        lightSpaceBasis[1][0] = leftVector.y;
+        lightSpaceBasis[1][1] = viewVector.y;
+        lightSpaceBasis[1][2] = -upVector.y;
+        lightSpaceBasis[1][3] = 0.f;
+        lightSpaceBasis[2][0] = leftVector.z;
+        lightSpaceBasis[2][1] = viewVector.z;
+        lightSpaceBasis[2][2] = -upVector.z;
+        lightSpaceBasis[2][3] = 0.f;
+        lightSpaceBasis[3][0] = 0.f;
+        lightSpaceBasis[3][1] = 0.f;
+        lightSpaceBasis[3][2] = 0.f;
+        lightSpaceBasis[3][3] = 1.f;
 
         //  rotate the view frustum into light space
         XRVec3TransformCoordArray(frustumPnts, frustumPnts, lightSpaceBasis, POINTS_NUM);
@@ -634,25 +652,25 @@ void CRender::render_sun()
 
         //  also - transform the shadow caster bounding boxes into light projective space.  we want to translate along the Z axis so that
         //  all shadow casters are in front of the near plane.
-        Fvector2 depthbounds = BuildTSMProjectionMatrix_caster_depth_bounds(lightSpaceBasis);
+        glm::vec2 depthbounds = BuildTSMProjectionMatrix_caster_depth_bounds(lightSpaceBasis);
 
         float min_z = std::min(depthbounds.x, frustumBox.minPt.z);
         float max_z = std::max(depthbounds.y, frustumBox.maxPt.z);
 
         if (min_z <= 1.f) //?
         {
-            Fmatrix lightSpaceTranslate;
-            lightSpaceTranslate.translate(0.f, 0.f, -min_z + 1.f);
+            glm::mat4 lightSpaceTranslate;
+            lightSpaceTranslate = glm::translate(lightSpaceTranslate, glm::vec3(0.f, 0.f, -min_z + 1.f));
             max_z = -min_z + max_z + 1.f;
             min_z = 1.f;
-            lightSpaceBasis.mul(lightSpaceBasis, lightSpaceTranslate);
+            lightSpaceBasis *= lightSpaceTranslate;
             XRVec3TransformCoordArray(frustumPnts, frustumPnts, lightSpaceTranslate, POINTS_NUM);
             frustumBox = BoundingBox(frustumPnts, POINTS_NUM);
         }
 
-        Fmatrix lightSpaceOrtho;
-        XRMatrixOrthoOffCenterLH(&lightSpaceOrtho, frustumBox.minPt.x, frustumBox.maxPt.x, frustumBox.minPt.y,
-                                   frustumBox.maxPt.y, min_z, max_z);
+        glm::mat4 lightSpaceOrtho = glm::ortho(frustumBox.minPt.x, frustumBox.maxPt.x,
+                                               frustumBox.minPt.y, frustumBox.maxPt.y,
+                                               min_z, max_z);
 
         //  transform the view frustum by the new matrix
         XRVec3TransformCoordArray(frustumPnts, frustumPnts, lightSpaceOrtho, POINTS_NUM);
@@ -669,9 +687,9 @@ void CRender::render_sun()
         centerOrig += centerPts[1];
         centerOrig *= 0.5f;
 
-        Fmatrix trapezoid_space;
+        glm::mat4 trapezoid_space;
 
-        Fmatrix xlate_center = {1.f, 0.f, 0.f, 0.f,
+        glm::mat4 xlate_center = {1.f, 0.f, 0.f, 0.f,
                                 0.f, 1.f, 0.f, 0.f,
                                 0.f, 0.f, 1.f, 0.f,
                                 -centerOrig.x, -centerOrig.y, 0.f, 1.f};
@@ -685,7 +703,7 @@ void CRender::render_sun()
         float cos_theta = x_len / half_center_len;
         float sin_theta = y_len / half_center_len;
 
-        Fmatrix rot_center = {cos_theta, -sin_theta, 0.f, 0.f,
+        glm::mat4 rot_center = {cos_theta, -sin_theta, 0.f, 0.f,
                               sin_theta, cos_theta, 0.f, 0.f,
                               0.f, 0.f, 1.f, 0.f,
                               0.f, 0.f, 0.f, 1.f};
@@ -694,7 +712,7 @@ void CRender::render_sun()
         //  since Top and Base are orthogonal to Center, we can skip computing the convex hull, and instead
         //  just find the view frustum X-axis extrema.  The most negative is Top, the most positive is Base
         //  Point Q (trapezoid projection point) will be a point on the y=0 line.
-        trapezoid_space.mul(xlate_center, rot_center);
+        trapezoid_space = xlate_center * rot_center;
         XRVec3TransformCoordArray(frustumPnts, frustumPnts, trapezoid_space, POINTS_NUM);
 
         BoundingBox frustumAABB2D(frustumPnts, POINTS_NUM);
@@ -705,12 +723,12 @@ void CRender::render_sun()
         y_scale = 1.f / y_scale;
 
         //  maximize the area occupied by the bounding box
-        Fmatrix scale_center = {x_scale, 0.f, 0.f, 0.f,
+        glm::mat4 scale_center = {x_scale, 0.f, 0.f, 0.f,
                                 0.f, y_scale, 0.f, 0.f,
                                 0.f, 0.f, 1.f, 0.f,
                                 0.f, 0.f, 0.f, 1.f};
 
-        trapezoid_space.mul(trapezoid_space, scale_center);
+        trapezoid_space *= scale_center;
 
         //  scale the frustum AABB up by these amounts (keep all values in the same space)
         frustumAABB2D.minPt.x *= x_scale;
@@ -746,45 +764,42 @@ void CRender::render_sun()
         float xn = eta;
         float xf = lambda + eta;
 
-        Fmatrix ptQ_xlate = {-1.f, 0.f, 0.f, 0.f,
+        glm::mat4 ptQ_xlate = {-1.f, 0.f, 0.f, 0.f,
                              0.f, 1.f, 0.f, 0.f,
                              0.f, 0.f, 1.f, 0.f,
                              projectionPtQ.x, 0.f, 0.f, 1.f};
-        trapezoid_space.mul(trapezoid_space, ptQ_xlate);
+        trapezoid_space *= ptQ_xlate;
 
         //  this shear balances the "trapezoid" around the y=0 axis (no change to the projection pt position)
         //  since we are redistributing the trapezoid, this affects the projection field of view (shear_amt)
         float shear_amt = (max_slope + _abs(min_slope)) * 0.5f - max_slope;
         max_slope = max_slope + shear_amt;
 
-        Fmatrix trapezoid_shear = {1.f, shear_amt, 0.f, 0.f,
+        glm::mat4 trapezoid_shear = {1.f, shear_amt, 0.f, 0.f,
                                    0.f, 1.f, 0.f, 0.f,
                                    0.f, 0.f, 1.f, 0.f,
                                    0.f, 0.f, 0.f, 1.f};
 
-        trapezoid_space.mul(trapezoid_space, trapezoid_shear);
-
+        trapezoid_space *= trapezoid_shear;
 
         float z_aspect = (frustumBox.maxPt.z - frustumBox.minPt.z) / (frustumAABB2D.maxPt.y - frustumAABB2D.minPt.y);
 
         //  perform a 2DH projection to 'unsqueeze' the top line.
-        Fmatrix trapezoid_projection = {xf / (xf - xn), 0.f, 0.f, 1.f,
+        glm::mat4 trapezoid_projection = {xf / (xf - xn), 0.f, 0.f, 1.f,
                                         0.f, 1.f / max_slope, 0.f, 0.f,
                                         0.f, 0.f, 1.f / (z_aspect * max_slope), 0.f,
                                         -xn * xf / (xf - xn), 0.f, 0.f, 0.f};
 
-        trapezoid_space.mul(trapezoid_space, trapezoid_projection);
+        trapezoid_space *= trapezoid_projection;
 
         //  the x axis is compressed to [0..1] as a result of the projection, so expand it to [-1,1]
-        Fmatrix biasedScaleX = {2.f, 0.f, 0.f, 0.f,
+        glm::mat4 biasedScaleX = {2.f, 0.f, 0.f, 0.f,
                                 0.f, 1.f, 0.f, 0.f,
                                 0.f, 0.f, 1.f, 0.f,
                                 -1.f, 0.f, 0.f, 1.f};
-        trapezoid_space.mul(trapezoid_space, biasedScaleX);
+        trapezoid_space *= biasedScaleX;
 
-        m_LightViewProj.mul(m_View, lightSpaceBasis);
-        m_LightViewProj.mul(m_LightViewProj, lightSpaceOrtho);
-        m_LightViewProj.mul(m_LightViewProj, trapezoid_space);
+        m_LightViewProj *= lightSpaceBasis * lightSpaceOrtho * trapezoid_space;
     }
     else
     {
@@ -799,7 +814,7 @@ void CRender::render_sun()
 
         // create clipper
         DumbClipper view_clipper;
-        Fmatrix xform = m_LightViewProj;
+        glm::mat4 xform = m_LightViewProj;
         view_clipper.frustum.CreateFromMatrix(*(Fmatrix*)glm::value_ptr(ex_full), FRUSTUM_P_ALL);
         for (int p = 0; p < view_clipper.frustum.p_count; p++)
         {
@@ -859,17 +874,17 @@ void CRender::render_sun()
         //  the divide by two's cancel out in the translation, but included for clarity
         float boxX = (b_receivers.vMax.x + b_receivers.vMin.x) / 2.f;
         float boxY = (b_receivers.vMax.y + b_receivers.vMin.y) / 2.f;
-        Fmatrix trapezoidUnitCube = {2.f / boxWidth, 0.f, 0.f, 0.f,
+        glm::mat4 trapezoidUnitCube = {2.f / boxWidth, 0.f, 0.f, 0.f,
                                      0.f, 2.f / boxHeight, 0.f, 0.f,
                                      0.f, 0.f, 1.f, 0.f,
                                      -2.f * boxX / boxWidth, -2.f * boxY / boxHeight, 0.f, 1.f};
-        m_LightViewProj.mul(m_LightViewProj, trapezoidUnitCube);
+        m_LightViewProj *= trapezoidUnitCube;
         //XRMatrixMultiply( &trapezoid_space, &trapezoid_space, &trapezoidUnitCube );
         FPU::m24r();
     }
 
     // Finalize & Cleanup
-    fuckingsun->X.D.combine = m_LightViewProj;
+    fuckingsun->X.D.combine = *(Fmatrix*)glm::value_ptr(m_LightViewProj);
     s_receivers.clear();
     s_casters.clear();
 
