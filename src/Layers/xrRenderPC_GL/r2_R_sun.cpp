@@ -41,13 +41,6 @@ static int facetable[6][4] = {
 #define ALMOST_ZERO(F) ((FLT_AS_DW(F) & 0x7f800000L)==0)
 #define IS_SPECIAL(F) ((FLT_AS_DW(F) & 0x7f800000L)==0x7f800000L)
 
-glm::vec3 XRVec3TransformNormal(const glm::vec3 &pv, const Fmatrix &pm)
-{
-    return glm::vec3(pm.m[0][0] * pv.x + pm.m[1][0] * pv.y + pm.m[2][0] * pv.z,
-    pm.m[0][1] * pv.x + pm.m[1][1] * pv.y + pm.m[2][1] * pv.z,
-    pm.m[0][2] * pv.x + pm.m[1][2] * pv.y + pm.m[2][2] * pv.z);
-}
-
 void XRVec3TransformCoordArray(glm::vec3* out, const glm::vec3* in, const glm::mat4& matrix, unsigned int elements)
 {
     for (unsigned int i = 0; i < elements; ++i)
@@ -550,15 +543,15 @@ void CRender::render_sun()
     set_Recorder(nullptr);
 
     //	Prepare to interact with D3DX code
-    const Fmatrix m_View = Device.mView;
+    const glm::mat4 m_View = glm::make_mat4x4(&Device.mView.m[0][0]);
     const glm::mat4 m_Projection = ex_project;
     glm::vec3 m_lightDir = -glm::vec3(fuckingsun->direction.x, fuckingsun->direction.y, fuckingsun->direction.z);
 
     //  these are the limits specified by the physical camera
     //  gamma is the "tilt angle" between the light and the view direction.
-    float m_fCosGamma = m_lightDir.x * m_View._13 +
-        m_lightDir.y * m_View._23 +
-        m_lightDir.z * m_View._33;
+    float m_fCosGamma = m_lightDir.x * m_View[0][2] +
+        m_lightDir.y * m_View[1][2] +
+        m_lightDir.z * m_View[2][2];
     float m_fTSM_Delta = ps_r2_sun_tsm_projection;
 
     // Compute REAL sheared xform based on receivers/casters information
@@ -586,7 +579,9 @@ void CRender::render_sun()
         const glm::vec3 eyeVector(0.f, 0.f, -1.f); //  eye is always -Z in eye space
 
         //  code copied straight from BuildLSPSMProjectionMatrix
-        glm::vec3 upVector = XRVec3TransformNormal(m_lightDir, m_View); // lightDir is defined in eye space, so xform it
+        glm::mat4 translate = glm::translate(m_View, m_lightDir); // lightDir is defined in eye space, so xform it
+        glm::vec4 vector(1.f,1.f,1.f,1.f);
+        glm::vec3 upVector = glm::vec3(translate * vector);
         leftVector = glm::cross(upVector, eyeVector);
         leftVector = glm::normalize(leftVector);
         viewVector = glm::cross(upVector, leftVector);
