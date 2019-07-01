@@ -524,15 +524,15 @@ void CRender::render_sun()
 
         // Create approximate ortho-xform
         // view: auto find 'up' and 'right' vectors
-        Fmatrix mdir_View, mdir_Project;
-        Fvector L_dir, L_up, L_right, L_pos;
-        L_pos.set(fuckingsun->position);
-        L_dir.set(fuckingsun->direction).normalize();
-        L_up.set(0, 1, 0);
-        if (_abs(L_up.dotproduct(L_dir)) > .99f) L_up.set(0, 0, 1);
-        L_right.crossproduct(L_up, L_dir).normalize();
-        L_up.crossproduct(L_dir, L_right).normalize();
-        mdir_View.build_camera_dir(L_pos, L_dir, L_up);
+        glm::mat4 mdir_View, mdir_Project;
+        glm::vec3 L_dir, L_up, L_right, L_pos;
+        L_pos = glm::vec3(fuckingsun->position.x, fuckingsun->position.y, fuckingsun->position.z);
+        L_dir = glm::normalize(glm::vec3(fuckingsun->direction.x, fuckingsun->direction.y, fuckingsun->direction.z));
+        L_up = glm::vec3(0.f, 1.f, 0.f);
+        if (_abs(glm::dot(L_up, L_dir)) > .99f) L_up = glm::vec3(0.f, 0.f, 1.f);
+        L_right = glm::normalize(glm::cross(L_up, L_dir));
+        L_up = glm::normalize(glm::cross(L_dir, L_right));
+        mdir_View = glm::lookAt(L_pos, L_dir, L_up);
 
         // projection: box
         Fbox frustum_bb;
@@ -545,13 +545,11 @@ void CRender::render_sun()
         Fbox& bb = frustum_bb;
         bb.grow(EPS);
 
-        XRMatrixOrthoOffCenterLH(&mdir_Project, bb.vMin.x, bb.vMax.x, bb.vMin.y, bb.vMax.y,
-                                   bb.vMin.z - tweak_ortho_xform_initial_offs, bb.vMax.z);
+        mdir_Project = glm::ortho(bb.vMin.x, bb.vMax.x, bb.vMin.y, bb.vMax.y,
+                                  bb.vMin.z - tweak_ortho_xform_initial_offs, bb.vMax.z);
 
         // full-xform
-        Fmatrix tmp_mul;
-        tmp_mul.mul(mdir_Project, mdir_View);
-        cull_xform = glm::make_mat4x4(&tmp_mul.m[0][0]);
+        cull_xform = mdir_Project * mdir_View;
         FPU::m24r();
     }
 
