@@ -89,11 +89,9 @@ script:
 
 deploy:
   provider: releases
-  api_key:
-    secure: kGVniXDR926BfVcA97y25BzALbijvgboBsozZzY9yc8RPz15Q4YG474h7vl14/J1
-  file: ./*.deb
+  api_key: "GITHUB OAUTH TOKEN"
+  file: *.deb
   skip_cleanup: true
-  draft: true
 
 notifications:
   email: false
