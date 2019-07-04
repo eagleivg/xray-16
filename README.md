@@ -16,7 +16,7 @@ OpenXRay is an improved version the X-Ray engine, used in world famous S.T.A.L.K
 |Platform|Compiler|Configurations|Status|
 |---|---|---|---|
 |Windows|MSVC|Debug / Mixed / Release (x64/x86)|[![Build status](https://ci.appveyor.com/api/projects/status/16mp39v0d7fts6yf?svg=true)](https://ci.appveyor.com/project/OpenXRay/xray-16)|
-|Linux|GCC|Debug / Release (x64/x86)|[![Build Status](https://api.travis-ci.org/OpenXRay/xray-16.svg?branch=xd_dev)](https://travis-ci.org/OpenXRay/xray-16)|
+|Linux|GCC|Debug / Release (x64/x86)|[![Build Status](https://api.travis-ci.org/eagleivg/xray-16.svg?branch=xd_dev)](https://travis-ci.org/eagleivg/xray-16)|
 
 ### Documentation
 |How to|||
