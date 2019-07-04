@@ -87,11 +87,12 @@ before_script:
 script:
 - if [ $TRAVIS_OS_NAME == linux ]; then make -j $core_count package && file openxray_1.6.02_*.deb; fi
 
-deploy:
-  provider: releases
-  api_key: "GITHUB OAUTH TOKEN"
-  file: *.deb
-  skip_cleanup: true
+  #deploy:
+  #  provider: releases
+  #  api_key: "GITHUB OAUTH TOKEN"
+  #  file: *.deb
+  #  skip_cleanup: true
+  #  draft: true
 
 notifications:
   email: false
