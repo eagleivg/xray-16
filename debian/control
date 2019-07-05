@@ -1,7 +1,7 @@
 Source: openxray
 Section: games
 Priority: optional
-Maintainer: lya Orlov <eagleivg@mail.ru>
+Maintainer: Ilya Orlov <eagleivg@mail.ru>
 Build-Depends: cmake, build-essential, libglew-dev, libegl1-mesa-dev, libgles2-mesa-dev, libpugixml-dev, libopenal-dev, libtbb-dev, libcrypto++-dev, liblockfile-dev, libfreeimage-dev, libfreeimageplus-dev, libogg-dev, libtheora-dev, libvorbis-dev, liblzo2-dev, libjpeg-dev, libncurses5-dev, gcc-8, libpcre3-dev, libsdl2-dev, g++-8, debhelper, lsb-release
 Homepage: https://github.com/OpenXRay/xray-16
 
