@@ -1,9 +1,8 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 #include "xrCompress.h"
 
 xrCompressor::xrCompressor()
-    : fs_pack_writer(NULL), bFast(false), files_list(NULL), folders_list(NULL), bStoreFiles(false), pPackHeader(NULL),
-      config_ltx(NULL)
+    : bFast(false), bStoreFiles(false), fs_pack_writer(nullptr), pPackHeader(nullptr), config_ltx(nullptr), files_list(nullptr), folders_list(nullptr)
 {
     bytesSRC = 0;
     bytesDST = 0;
@@ -11,7 +10,7 @@ xrCompressor::xrCompressor()
     filesSKIP = 0;
     filesVFS = 0;
     filesALIAS = 0;
-    c_heap = NULL;
+    c_heap = nullptr;
     dwTimeStart = 0;
 
     XRP_MAX_SIZE = 1024 * 1024 * 640; // bytes (640Mb)
@@ -23,9 +22,9 @@ xrCompressor::~xrCompressor()
         FS.r_close(pPackHeader);
 }
 
-bool is_tail(LPCSTR name, LPCSTR tail, const u32 tlen)
+bool is_tail(pcstr name, pcstr tail, const u32 tlen)
 {
-    LPCSTR p = strstr(name, tail);
+    pcstr p = strstr(name, tail);
     if (!p)
         return false;
 
@@ -33,11 +32,11 @@ bool is_tail(LPCSTR name, LPCSTR tail, const u32 tlen)
     return (p == name + nlen - tlen);
 }
 
-bool xrCompressor::testSKIP(LPCSTR path)
+bool xrCompressor::testSKIP(pcstr path)
 {
     string256 p_name;
     string256 p_ext;
-    _splitpath(path, 0, 0, p_name, p_ext);
+    _splitpath(path, nullptr, nullptr, p_name, p_ext);
 
     if (strstr(path, "textures\\lod\\"))
         return true;
@@ -95,13 +94,13 @@ bool xrCompressor::testSKIP(LPCSTR path)
     return false;
 }
 
-bool xrCompressor::testVFS(LPCSTR path)
+bool xrCompressor::testVFS(pcstr path)
 {
     if (bStoreFiles)
         return (true);
 
     string256 p_ext;
-    _splitpath(path, 0, 0, 0, p_ext);
+    _splitpath(path, nullptr, nullptr, nullptr, p_ext);
 
     if (!xr_stricmp(p_ext, ".xml"))
         return (false);
@@ -115,7 +114,7 @@ bool xrCompressor::testVFS(LPCSTR path)
     return (TRUE);
 }
 
-bool xrCompressor::testEqual(LPCSTR path, IReader* base)
+bool xrCompressor::testEqual(pcstr path, IReader* base)
 {
     bool res = false;
     IReader* test = FS.r_open(path);
@@ -145,11 +144,11 @@ xrCompressor::ALIAS* xrCompressor::testALIAS(IReader* base, u32 crc, u32& a_test
         }
         ++I;
     }
-    return NULL;
+    return nullptr;
 }
 
 void xrCompressor::write_file_header(
-    LPCSTR file_name, const u32& crc, const u32& ptr, const u32& size_real, const u32& size_compressed)
+    pcstr file_name, const u32& crc, const u32& ptr, const u32& size_real, const u32& size_compressed)
 {
     size_t file_name_size = (xr_strlen(file_name) + 0) * sizeof(char);
     size_t buffer_size = file_name_size + 4 * sizeof(u32);
@@ -177,7 +176,7 @@ void xrCompressor::write_file_header(
     fs_desc.w(buffer_start, full_buffer_size);
 }
 
-void xrCompressor::CompressOne(LPCSTR path)
+void xrCompressor::CompressOne(pcstr path)
 {
     filesTOTAL++;
 
@@ -192,6 +191,7 @@ void xrCompressor::CompressOne(LPCSTR path)
     string_path fn;
     strconcat(sizeof(fn), fn, target_name.c_str(), "\\", path);
 
+#if defined(WINDOWS)
     if (::GetFileAttributes(fn) == u32(-1))
     {
         filesSKIP++;
@@ -199,9 +199,10 @@ void xrCompressor::CompressOne(LPCSTR path)
         Msg("%-80s   - CAN'T OPEN", path);
         return;
     }
+#endif
 
     IReader* src = FS.r_open(fn);
-    if (0 == src)
+    if (nullptr == src)
     {
         filesSKIP++;
         printf(" - CAN'T OPEN");
@@ -310,7 +311,7 @@ void xrCompressor::CompressOne(LPCSTR path)
     // Write description
     write_file_header(path, c_crc32, c_ptr, c_size_real, c_size_compressed);
 
-    if (0 == A)
+    if (nullptr == A)
     {
         // Register for future aliasing
         ALIAS R;
@@ -325,7 +326,7 @@ void xrCompressor::CompressOne(LPCSTR path)
     FS.r_close(src);
 }
 
-void xrCompressor::OpenPack(LPCSTR tgt_folder, int num)
+void xrCompressor::OpenPack(pcstr tgt_folder, int num)
 {
     VERIFY(0 == fs_pack_writer);
 
@@ -383,7 +384,7 @@ void xrCompressor::OpenPack(LPCSTR tgt_folder, int num)
     fs_pack_writer->open_chunk(0);
 }
 
-void xrCompressor::SetPackHeaderName(LPCSTR n)
+void xrCompressor::SetPackHeaderName(pcstr n)
 {
     pPackHeader = FS.r_open(n);
     R_ASSERT2(pPackHeader, n);
@@ -438,8 +439,10 @@ void xrCompressor::PerformWork()
 
         for (size_t it = 0; it < files_list->size(); it++)
         {
+#if defined (WINDOWS)
             xr_sprintf(caption, "Compress files: %d/%d - %d%%", it, files_list->size(), (it * 100) / files_list->size());
             SetWindowText(GetConsoleWindow(), caption);
+#endif
             printf("\n%-80s   ", (*files_list)[it]);
 
             if (fs_pack_writer->tell() > XRP_MAX_SIZE)
@@ -475,7 +478,7 @@ void xrCompressor::ProcessTargetFolder()
     FS.file_list_close(files_list);
 }
 
-void xrCompressor::GatherFiles(LPCSTR path)
+void xrCompressor::GatherFiles(pcstr path)
 {
     auto i_list = FS.file_list_open("$target_folder$", path, FS_ListFiles | FS_RootOnly);
     if (!i_list)
@@ -498,7 +501,7 @@ void xrCompressor::GatherFiles(LPCSTR path)
     FS.file_list_close(i_list);
 }
 
-bool xrCompressor::IsFolderAccepted(CInifile& ltx, LPCSTR path, BOOL& recurse)
+bool xrCompressor::IsFolderAccepted(CInifile& ltx, pcstr path, BOOL& recurse)
 {
     // exclude folders
     if (ltx.section_exist("exclude_folders"))
@@ -541,7 +544,7 @@ void xrCompressor::ProcessLTX(CInifile& ltx)
             u32 folder_mask = FS_ListFolders | (ifRecurse ? 0 : FS_RootOnly);
 
             string_path path;
-            LPCSTR _path = 0 == xr_strcmp(it.first.c_str(), ".\\") ? "" : it.first.c_str();
+            pcstr _path = 0 == xr_strcmp(it.first.c_str(), ".\\") ? "" : it.first.c_str();
             xr_strcpy(path, _path);
             size_t path_len = xr_strlen(path);
             if ((0 != path_len) && (path[path_len - 1] != '\\'))

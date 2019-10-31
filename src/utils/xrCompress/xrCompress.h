@@ -25,22 +25,22 @@ class xrCompressor
     xr_multimap<u32, ALIAS> aliases;
 
     xr_vector<shared_str> exclude_exts;
-    bool testSKIP(LPCSTR path);
+    bool testSKIP(pcstr path);
     ALIAS* testALIAS(IReader* base, u32 crc, u32& a_tests);
-    bool testEqual(LPCSTR path, IReader* base);
-    bool testVFS(LPCSTR path);
-    bool IsFolderAccepted(CInifile& ltx, LPCSTR path, BOOL& recurse);
+    bool testEqual(pcstr path, IReader* base);
+    bool testVFS(pcstr path);
+    bool IsFolderAccepted(CInifile& ltx, pcstr path, BOOL& recurse);
 
-    void GatherFiles(LPCSTR folder);
+    void GatherFiles(pcstr folder);
 
     void write_file_header(
-        LPCSTR file_name, const u32& crc, const u32& ptr, const u32& size_real, const u32& size_compressed);
+        pcstr file_name, const u32& crc, const u32& ptr, const u32& size_real, const u32& size_compressed);
     void ClosePack();
-    void OpenPack(LPCSTR tgt_folder, int num);
+    void OpenPack(pcstr tgt_folder, int num);
 
     void PerformWork();
 
-    void CompressOne(LPCSTR path);
+    void CompressOne(pcstr path);
 
     u32 bytesSRC;
     u32 bytesDST;
@@ -60,8 +60,8 @@ public:
     void SetFastMode(bool b) { bFast = b; }
     void SetStoreFiles(bool b) { bStoreFiles = b; }
     void SetMaxVolumeSize(u32 sz) { XRP_MAX_SIZE = sz; }
-    void SetTargetName(LPCSTR n) { target_name = n; }
-    void SetPackHeaderName(LPCSTR n);
+    void SetTargetName(pcstr n) { target_name = n; }
+    void SetPackHeaderName(pcstr n);
 
     void ProcessLTX(CInifile& ini);
     void ProcessTargetFolder();

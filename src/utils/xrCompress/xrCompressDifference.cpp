@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "StdAfx.h"
 
 #ifndef MOD_COMPRESS
 
@@ -28,7 +28,7 @@ struct file_comparer
         m_flags = flag;
         m_fs_new = fs1;
         m_fs_old = fs2;
-        m_freader = 0;
+        m_freader = nullptr;
         m_crc32 = 0;
         //		xr_strcpy(m_short_name,c+xr_strlen(arget_folder)+1);
         xr_strcpy(m_full_name, c);
@@ -91,9 +91,8 @@ struct file_comparer
     }
 };
 
-int ProcessDifference()
+int ProcessDifference(pcstr params)
 {
-    LPCSTR params = GetCommandLine();
     Flags32 _flags;
     _flags.zero();
     if (strstr(params, "-diff /?"))
@@ -109,14 +108,14 @@ int ProcessDifference()
         return 3;
     }
 
-    CLocatorAPI* FS_new = NULL;
-    CLocatorAPI* FS_old = NULL;
+    CLocatorAPI* FS_new = nullptr;
+    CLocatorAPI* FS_old = nullptr;
 
-    xr_vector<char*>* file_list_old = NULL;
-    xr_vector<char*>* folder_list_old = NULL;
+    xr_vector<char*>* file_list_old = nullptr;
+    xr_vector<char*>* folder_list_old = nullptr;
 
-    xr_vector<char*>* file_list_new = NULL;
-    xr_vector<char*>* folder_list_new = NULL;
+    xr_vector<char*>* file_list_new = nullptr;
+    xr_vector<char*>* folder_list_new = nullptr;
 
     sscanf(strstr(params, "-diff ") + 6, "%[^ ] ", new_folder);
     sscanf(strstr(params, "-diff ") + 6 + xr_strlen(new_folder) + 1, "%[^ ] ", old_folder);
@@ -170,8 +169,11 @@ int ProcessDifference()
     for (u32 i = 0; i < total; ++i)
     {
         LPCSTR fn = target_file_list[i];
+#if defined (WINDOWS)
         xr_sprintf(stats, "%d of %d (%3.1f%%)", i, total, 100.0f * ((float)i / (float)total));
+
         SetConsoleTitle(stats);
+#endif
 
         strconcat(sizeof(out_path), out_path, target_folder, "\\", fn);
         VerifyPath(out_path);
