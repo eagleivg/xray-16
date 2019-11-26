@@ -10,6 +10,7 @@
 #include "blender_bloom_build.h"
 #include "blender_luminance.h"
 #include "blender_ssao.h"
+#include "blender_distort.h"
 #include "blender_fxaa.h"
 #include "Layers/xrRenderDX10/dx10MinMaxSMBlender.h"
 #include "Layers/xrRenderDX10/MSAA/dx10MSAABlender.h"
@@ -283,6 +284,7 @@ CRenderTarget::CRenderTarget()
     b_accum_spot = new CBlender_accum_spot();
     b_accum_reflected = new CBlender_accum_reflected();
     b_bloom = new CBlender_bloom_build();
+    b_distort = new CBlender_distort();
     if (RImplementation.o.dx10_msaa)
     {
         b_bloom_msaa = new CBlender_bloom_build_msaa();
@@ -900,7 +902,7 @@ CRenderTarget::CRenderTarget()
     }
 
     // Menu
-    s_menu.create("distort");
+    s_menu.create(b_distort);
     g_menu.create(FVF::F_TL, RCache.Vertex.Buffer(), RCache.QuadIB);
 
     // Flip
