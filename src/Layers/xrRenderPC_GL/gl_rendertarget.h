@@ -34,6 +34,7 @@ public:
     IBlender* b_accum_point;
     IBlender* b_accum_spot;
     IBlender* b_accum_reflected;
+    IBlender* b_accum_volumetric;
     IBlender* b_bloom;
     IBlender* b_luminance;
     IBlender* b_combine;

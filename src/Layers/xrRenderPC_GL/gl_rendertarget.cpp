@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Layers/xrRender/ResourceManager.h"
+#include "blender_accum_volumetric.h"
 #include "blender_light_occq.h"
 #include "blender_light_mask.h"
 #include "blender_light_direct.h"
@@ -284,6 +285,7 @@ CRenderTarget::CRenderTarget()
     b_accum_point = new CBlender_accum_point();
     b_accum_spot = new CBlender_accum_spot();
     b_accum_reflected = new CBlender_accum_reflected();
+    b_accum_volumetric = new CBlender_accum_volumetric();
     b_bloom = new CBlender_bloom_build();
     b_distort = new CBlender_distort();
     b_postprocess = new CBlender_postprocess();
@@ -536,7 +538,7 @@ CRenderTarget::CRenderTarget()
     }
 
     {
-        s_accum_volume.create("accum_volumetric", "lights" DELIMITER "lights_spot01");
+        s_accum_volume.create(b_accum_volumetric, "lights" DELIMITER "lights_spot01");
         accum_volumetric_geom_create();
         g_accum_volumetric.create(D3DFVF_XYZ, g_accum_volumetric_vb, g_accum_volumetric_ib);
     }
