@@ -11,6 +11,7 @@
 #include "blender_luminance.h"
 #include "blender_ssao.h"
 #include "blender_distort.h"
+#include "blender_postprocess.h"
 #include "blender_fxaa.h"
 #include "Layers/xrRenderDX10/dx10MinMaxSMBlender.h"
 #include "Layers/xrRenderDX10/MSAA/dx10MSAABlender.h"
@@ -285,6 +286,7 @@ CRenderTarget::CRenderTarget()
     b_accum_reflected = new CBlender_accum_reflected();
     b_bloom = new CBlender_bloom_build();
     b_distort = new CBlender_distort();
+    b_postprocess = new CBlender_postprocess();
     if (RImplementation.o.dx10_msaa)
     {
         b_bloom_msaa = new CBlender_bloom_build_msaa();
@@ -893,7 +895,7 @@ CRenderTarget::CRenderTarget()
     }
 
     // PP
-    s_postprocess.create("postprocess");
+    s_postprocess.create(b_postprocess);
     g_postprocess.create(D3DFVF_XYZRHW | D3DFVF_DIFFUSE | D3DFVF_SPECULAR | D3DFVF_TEX3, RCache.Vertex.Buffer(),
                          RCache.QuadIB);
     if (RImplementation.o.dx10_msaa)
