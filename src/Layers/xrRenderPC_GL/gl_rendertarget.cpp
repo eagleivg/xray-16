@@ -963,8 +963,11 @@ CRenderTarget::~CRenderTarget()
     xr_delete(b_accum_spot);
     xr_delete(b_accum_point);
     xr_delete(b_accum_direct);
+    xr_delete(b_accum_volumetric);
     xr_delete(b_ssao);
     xr_delete(b_fxaa); //FXAA
+    xr_delete(b_distort);
+    xr_delete(b_postprocess);
 
     if (RImplementation.o.dx10_msaa)
     {
