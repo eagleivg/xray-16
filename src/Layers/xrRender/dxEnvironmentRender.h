@@ -54,12 +54,20 @@ public:
     virtual BOOL canBeLMAPped() { return FALSE; }
     virtual void Compile(CBlender_Compile& C)
     {
-		C.r_Pass("clouds", "clouds", false, FALSE, TRUE, TRUE, D3DBLEND_SRCALPHA, D3DBLEND_INVSRCALPHA);
+        IBlender::Compile(C);
+        
+        switch (C.iElement)
+        {
+        case 0:
+        case 1:
+        C.r_Pass("clouds", "clouds", false, FALSE, FALSE, TRUE, D3DBLEND_SRCALPHA, D3DBLEND_INVSRCALPHA);
         C.SetParams(3, TRUE);
-        C.r_Sampler("s_clouds0", "null", false, D3DTADDRESS_WRAP, D3DTEXF_ANISOTROPIC, D3DTEXF_NONE, D3DTEXF_ANISOTROPIC);
-        C.r_Sampler("s_clouds1", "null", false, D3DTADDRESS_WRAP, D3DTEXF_ANISOTROPIC, D3DTEXF_NONE, D3DTEXF_ANISOTROPIC);
+        C.r_Sampler("s_clouds0", "null", false, D3DTADDRESS_WRAP, D3DTEXF_ANISOTROPIC, D3DTEXF_LINEAR, D3DTEXF_ANISOTROPIC);
+        C.r_Sampler("s_clouds1", "null", false, D3DTADDRESS_WRAP, D3DTEXF_ANISOTROPIC, D3DTEXF_LINEAR, D3DTEXF_ANISOTROPIC);
         C.r_Sampler_rtf("s_tonemap", r2_RT_luminance_cur);
         C.r_End();
+            break;
+        }
     }
 };
 
