@@ -35,12 +35,13 @@ public:
     IBlender* b_accum_spot;
     IBlender* b_accum_reflected;
     IBlender* b_accum_volumetric;
+    IBlender* b_accum_volumetric_sun_nomsaa;
     IBlender* b_bloom;
     IBlender* b_luminance;
     IBlender* b_combine;
-	IBlender* b_postprocess;
+    IBlender* b_postprocess;
     IBlender* b_postprocess_msaa;
-	IBlender* b_distort;
+    IBlender* b_distort;
     IBlender* b_bloom_msaa;
     IBlender* b_combine_msaa[8];
     IBlender* b_accum_mask_msaa[8];

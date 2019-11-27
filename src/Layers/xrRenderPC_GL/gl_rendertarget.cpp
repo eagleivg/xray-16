@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Layers/xrRender/ResourceManager.h"
 #include "blender_accum_volumetric.h"
+#include "blender_accum_volumetric_sun_nomsaa.h"
 #include "blender_light_occq.h"
 #include "blender_light_mask.h"
 #include "blender_light_direct.h"
@@ -286,6 +287,7 @@ CRenderTarget::CRenderTarget()
     b_accum_spot = new CBlender_accum_spot();
     b_accum_reflected = new CBlender_accum_reflected();
     b_accum_volumetric = new CBlender_accum_volumetric();
+    b_accum_volumetric_sun_nomsaa = new CBlender_accum_volumetric_sun_nomsaa();
     b_bloom = new CBlender_bloom_build();
     b_distort = new CBlender_distort();
     b_postprocess = new CBlender_postprocess();
@@ -440,7 +442,7 @@ CRenderTarget::CRenderTarget()
         }
         if (RImplementation.o.advancedpp)
         {
-            s_accum_direct_volumetric.create("accum_volumetric_sun_nomsaa");
+            s_accum_direct_volumetric.create(b_accum_volumetric_sun_nomsaa);
 
             if (RImplementation.o.dx10_minmax_sm)
                 s_accum_direct_volumetric_minmax.create("accum_volumetric_sun_nomsaa_minmax");
@@ -964,6 +966,7 @@ CRenderTarget::~CRenderTarget()
     xr_delete(b_accum_point);
     xr_delete(b_accum_direct);
     xr_delete(b_accum_volumetric);
+	xr_delete(b_accum_volumetric_sun_nomsaa);
     xr_delete(b_ssao);
     xr_delete(b_fxaa); //FXAA
     xr_delete(b_distort);
