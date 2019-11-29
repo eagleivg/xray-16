@@ -39,7 +39,7 @@ public:
     IBlender* b_bloom;
     IBlender* b_luminance;
     IBlender* b_combine;
-	IBlender* b_combine_volumetric;
+    IBlender* b_combine_volumetric;
     IBlender* b_postprocess;
     IBlender* b_postprocess_msaa;
     IBlender* b_distort;
@@ -50,6 +50,7 @@ public:
     IBlender* b_accum_direct_msaa[8];
     IBlender* b_accum_direct_volumetric_msaa[8];
     IBlender* b_accum_direct_volumetric_sun_msaa[8];
+    IBlender* b_accum_volumetric_nomsaa;
     IBlender* b_accum_volumetric_msaa[8];
     IBlender* b_accum_point_msaa[8];
     IBlender* b_accum_reflected_msaa[8];

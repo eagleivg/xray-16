@@ -78,7 +78,7 @@ void light::set_texture(LPCSTR name)
 #if (RENDER != R_R3) && (RENDER != R_R4) && (RENDER != R_GL)
     s_volumetric.create("accum_volumetric", name);
 #else //    (RENDER!=R_R3) && (RENDER!=R_R4) && (RENDER!=R_GL)
-    s_volumetric.create("accum_volumetric_nomsaa", name);
+    s_volumetric.create(RImplementation.Target->b_accum_volumetric_nomsaa, name);
     if (RImplementation.o.dx10_msaa)
     {
         int bound = 1;

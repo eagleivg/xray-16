@@ -1,6 +1,7 @@
 #include "stdafx.h"
 #include "Layers/xrRender/ResourceManager.h"
 #include "blender_accum_volumetric.h"
+#include "blender_accum_volumetric_nomsaa.h"
 #include "blender_accum_volumetric_sun_nomsaa.h"
 #include "blender_light_occq.h"
 #include "blender_light_mask.h"
@@ -299,7 +300,8 @@ CRenderTarget::CRenderTarget()
     }
     b_luminance = new CBlender_luminance();
     b_combine = new CBlender_combine();
-	b_combine_volumetric = new CBlender_combine_volumetric();
+    b_combine_volumetric = new CBlender_combine_volumetric();
+    b_accum_volumetric_nomsaa = new CBlender_accum_volumetric_nomsaa();
     b_ssao = new CBlender_SSAO_noMSAA();
 
     //FXAA
@@ -969,6 +971,7 @@ CRenderTarget::~CRenderTarget()
     xr_delete(b_accum_point);
     xr_delete(b_accum_direct);
     xr_delete(b_accum_volumetric);
+    xr_delete(b_accum_volumetric_nomsaa);
     xr_delete(b_accum_volumetric_sun_nomsaa);
     xr_delete(b_ssao);
     xr_delete(b_fxaa); //FXAA
