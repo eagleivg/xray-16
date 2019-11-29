@@ -9,6 +9,7 @@
 #include "blender_light_spot.h"
 #include "blender_light_reflected.h"
 #include "blender_combine.h"
+#include "blender_combine_volumetric.h"
 #include "blender_bloom_build.h"
 #include "blender_luminance.h"
 #include "blender_ssao.h"
@@ -298,6 +299,7 @@ CRenderTarget::CRenderTarget()
     }
     b_luminance = new CBlender_luminance();
     b_combine = new CBlender_combine();
+	b_combine_volumetric = new CBlender_combine_volumetric();
     b_ssao = new CBlender_SSAO_noMSAA();
 
     //FXAA
@@ -661,7 +663,7 @@ CRenderTarget::CRenderTarget()
             D3DDECL_END()
         };
         s_combine.create(b_combine, "r2" DELIMITER "combine");
-        s_combine_volumetric.create("combine_volumetric");
+        s_combine_volumetric.create(b_combine_volumetric);
         s_combine_dbg_0.create("effects" DELIMITER "screen_set", r2_RT_smap_surf);
         s_combine_dbg_1.create("effects" DELIMITER "screen_set", r2_RT_luminance_t8);
         s_combine_dbg_Accumulator.create("effects" DELIMITER "screen_set", r2_RT_accum);
@@ -959,6 +961,7 @@ CRenderTarget::~CRenderTarget()
 
     // Blenders
     xr_delete(b_combine);
+    xr_delete(b_combine_volumetric);
     xr_delete(b_luminance);
     xr_delete(b_bloom);
     xr_delete(b_accum_reflected);
@@ -966,7 +969,7 @@ CRenderTarget::~CRenderTarget()
     xr_delete(b_accum_point);
     xr_delete(b_accum_direct);
     xr_delete(b_accum_volumetric);
-	xr_delete(b_accum_volumetric_sun_nomsaa);
+    xr_delete(b_accum_volumetric_sun_nomsaa);
     xr_delete(b_ssao);
     xr_delete(b_fxaa); //FXAA
     xr_delete(b_distort);

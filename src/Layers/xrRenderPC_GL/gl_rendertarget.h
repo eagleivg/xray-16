@@ -39,6 +39,7 @@ public:
     IBlender* b_bloom;
     IBlender* b_luminance;
     IBlender* b_combine;
+	IBlender* b_combine_volumetric;
     IBlender* b_postprocess;
     IBlender* b_postprocess_msaa;
     IBlender* b_distort;
