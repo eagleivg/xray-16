@@ -36,6 +36,7 @@ public:
     IBlender* b_accum_reflected;
     IBlender* b_accum_volumetric;
     IBlender* b_accum_volumetric_sun_nomsaa;
+    IBlender* b_accum_volumetric_sun_nomsaa_minmax;
     IBlender* b_bloom;
     IBlender* b_luminance;
     IBlender* b_combine;

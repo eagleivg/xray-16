@@ -290,6 +290,7 @@ CRenderTarget::CRenderTarget()
     b_accum_reflected = new CBlender_accum_reflected();
     b_accum_volumetric = new CBlender_accum_volumetric();
     b_accum_volumetric_sun_nomsaa = new CBlender_accum_volumetric_sun_nomsaa();
+    b_accum_volumetric_sun_nomsaa_minmax = new CBlender_accum_volumetric_sun_nomsaa_minmax();
     b_bloom = new CBlender_bloom_build();
     b_distort = new CBlender_distort();
     b_postprocess = new CBlender_postprocess();
@@ -449,7 +450,7 @@ CRenderTarget::CRenderTarget()
             s_accum_direct_volumetric.create(b_accum_volumetric_sun_nomsaa);
 
             if (RImplementation.o.dx10_minmax_sm)
-                s_accum_direct_volumetric_minmax.create("accum_volumetric_sun_nomsaa_minmax");
+                s_accum_direct_volumetric_minmax.create(b_accum_volumetric_sun_nomsaa_minmax);
 
             if (RImplementation.o.dx10_msaa)
             {
@@ -972,6 +973,7 @@ CRenderTarget::~CRenderTarget()
     xr_delete(b_accum_direct);
     xr_delete(b_accum_volumetric);
     xr_delete(b_accum_volumetric_nomsaa);
+    xr_delete(b_accum_volumetric_sun_nomsaa_minmax);
     xr_delete(b_accum_volumetric_sun_nomsaa);
     xr_delete(b_ssao);
     xr_delete(b_fxaa); //FXAA
