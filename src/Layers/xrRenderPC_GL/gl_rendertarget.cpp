@@ -322,7 +322,7 @@ CRenderTarget::CRenderTarget()
             b_accum_mask_msaa[i] = new CBlender_accum_direct_mask_msaa();
             b_accum_direct_msaa[i] = new CBlender_accum_direct_msaa();
             b_accum_direct_volumetric_msaa[i] = new CBlender_accum_direct_volumetric_msaa();
-            //b_accum_direct_volumetric_sun_msaa[i]	= new CBlender_accum_direct_volumetric_sun_msaa			();
+            b_accum_direct_volumetric_sun_msaa[i]	= new CBlender_accum_direct_volumetric_sun_msaa_n(i);
             b_accum_spot_msaa[i] = new CBlender_accum_spot_msaa();
             b_accum_volumetric_msaa[i] = new CBlender_accum_volumetric_msaa();
             b_accum_point_msaa[i] = new CBlender_accum_point_msaa();
@@ -472,7 +472,7 @@ CRenderTarget::CRenderTarget()
                 for (int i = 0; i < bound; ++i)
                 {
                     //s_accum_direct_volumetric_msaa[i].create		(b_accum_direct_volumetric_sun_msaa[i],			"r3" DELIMITER "accum_direct");
-                    s_accum_direct_volumetric_msaa[i].create(snames[i]);
+                    s_accum_direct_volumetric_msaa[i].create(b_accum_direct_volumetric_sun_msaa[i]);
                 }
             }
         }
@@ -993,7 +993,7 @@ CRenderTarget::~CRenderTarget()
             xr_delete(b_accum_direct_msaa[i]);
             xr_delete(b_accum_mask_msaa[i]);
             xr_delete(b_accum_direct_volumetric_msaa[i]);
-            //xr_delete					(b_accum_direct_volumetric_sun_msaa[i]);
+            xr_delete(b_accum_direct_volumetric_sun_msaa[i]);
             xr_delete(b_accum_spot_msaa[i]);
             xr_delete(b_accum_volumetric_msaa[i]);
             xr_delete(b_accum_point_msaa[i]);

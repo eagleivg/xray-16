@@ -282,3 +282,32 @@ void CBlender_accum_direct_volumetric_sun_msaa::Compile(CBlender_Compile& C)
     }
     GEnv.Render->m_MSAASample = -1;
 }
+
+CBlender_accum_direct_volumetric_sun_msaa_n::~CBlender_accum_direct_volumetric_sun_msaa_n() { }
+
+void CBlender_accum_direct_volumetric_sun_msaa_n::Compile(CBlender_Compile& C)
+{
+    IBlender::Compile(C);
+
+    if (Name)
+        GEnv.Render->m_MSAASample = atoi(Definition);
+    else
+        GEnv.Render->m_MSAASample = -1;
+
+    string32 p_shader;
+    xr_sprintf(p_shader, "accum_volumetric_sun_msaa%d", m_sample_num);
+
+    switch (C.iElement)
+    {
+    case 0: // near pass - enable Z-test to perform depth-clipping
+        C.r_Pass("accum_sun", p_shader, false, false, false, true, D3DBLEND_ONE, D3DBLEND_ONE, false, 0);
+        C.SetParams(2, FALSE);
+        C.r_Sampler("s_dmap", r2_RT_smap_depth);
+        C.r_Sampler_cmp("s_smap", r2_RT_smap_depth);
+        C.r_Sampler_rtf("s_position", r2_RT_P);
+        jitter(C);
+        C.r_End();
+        break;
+    }
+    GEnv.Render->m_MSAASample = -1;
+}
