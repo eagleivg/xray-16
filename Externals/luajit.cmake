@@ -316,17 +316,18 @@ else()
 	 set(LIB_NAME ${PROJECT_NAME})
 endif()
 
-#if(${BUILD_STATIC_LIB})
-#	add_library( ${LIB_NAME} STATIC ${LJCORE_C} ${DEPS} )
-#	target_link_libraries ( ${LIB_NAME} ${LIBS} )
-#else()
+if(${BUILD_STATIC_LIB})
+	add_library( ${LIB_NAME} STATIC ${LJCORE_C} ${DEPS} )
+	set_property(TARGET ${PROJECT_NAME} PROPERTY POSITION_INDEPENDENT_CODE ON)
+	target_link_libraries ( ${LIB_NAME} ${LIBS} )
+else()
 	add_library( ${LIB_NAME} SHARED ${LJCORE_C} ${DEPS} )
 	set_target_properties ( ${LIB_NAME} PROPERTIES PREFIX "" )
 	target_link_libraries ( ${LIB_NAME} ${LIBS} )
     install(TARGETS ${LIB_NAME} LIBRARY DESTINATION /usr/lib PERMISSIONS OWNER_READ OWNER_WRITE 
         GROUP_READ 
         WORLD_READ )
-#endif()
+endif()
 
 if(NOT ${BUILD_LIB_ONLY})
 	## LuaJIT Executable
