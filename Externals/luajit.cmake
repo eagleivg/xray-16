@@ -19,7 +19,7 @@ set ( LUA_PATH "LUA_PATH" CACHE STRING "Environment variable to use as package.p
 set ( LUA_CPATH "LUA_CPATH" CACHE STRING "Environment variable to use as package.cpath." )
 set ( LUA_INIT "LUA_INIT" CACHE STRING "Environment variable for initial script." )
 
-option ( BUILD_STATIC_LIB "Build static lib." OFF )
+option ( BUILD_STATIC_LIB "Build static lib." ON )
 option ( LUA_ANSI "Use only ansi features." OFF )
 option ( LUA_USE_RELATIVE_LOADLIB "Use modified loadlib.c with support for relative paths on posix systems." ON)
 set ( LUA_IDSIZE 60 CACHE NUMBER "gives the maximum size for the description of the source." )
