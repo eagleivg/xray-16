@@ -215,8 +215,6 @@ public:
     virtual void DumpStatistics(class IGameFont& font, class IPerformanceAlert* alert) override;
 
     void ObtainRequiredWindowFlags(u32& /*windowFlags*/) override {}
-    void MakeContextCurrent(RenderContext /*context*/) override {}
-
 public:
     CResourceManager* Resources;
     ref_shader m_WireShader;

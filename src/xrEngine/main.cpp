@@ -297,7 +297,6 @@ ENGINE_API void Startup()
 
     g_SpatialSpace = new ISpatial_DB("Spatial obj");
     g_SpatialSpacePhysic = new ISpatial_DB("Spatial phys");
-    Device.WaitUntilCreated();
 
     g_pGamePersistent = dynamic_cast<IGame_Persistent*>(NEW_INSTANCE(CLSID_GAME_PERSISTANT));
     R_ASSERT(g_pGamePersistent);

@@ -202,9 +202,7 @@ public:
     BOOL Paused();
 
 private:
-    static void PrimaryThreadProc(void* context);
     static void SecondaryThreadProc(void* context);
-    static void RenderThreadProc(void* context);
 
 public:
     // Scene control
@@ -237,7 +235,6 @@ private:
 
 public:
     void Create();
-    void WaitUntilCreated();
 
     void Run(void);
     void Destroy(void);
@@ -274,9 +271,7 @@ private:
     std::atomic<bool> precacheWhileReset;
     std::atomic<bool> mtProcessingAllowed;
     Event deviceCreated, deviceReadyToRun;
-    Event primaryReadyToRun, primaryProcessFrame, primaryFrameDone, primaryThreadExit; // Primary thread events
     Event syncProcessFrame, syncFrameDone, syncThreadExit; // Secondary thread events
-    Event renderProcessFrame, renderFrameDone, renderThreadExit; // Render thread events
 
 public:
     Event PresentationFinished = nullptr;

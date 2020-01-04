@@ -476,12 +476,6 @@ void CRender::ObtainRequiredWindowFlags(u32& windowFlags)
     HW.SetPrimaryAttributes();
 }
 
-void CRender::MakeContextCurrent(RenderContext context)
-{
-    R_ASSERT3(HW.MakeContextCurrent(context) == 0,
-        "Failed to switch OpenGL context", SDL_GetError());
-}
-
 // Implementation
 IRender_ObjectSpecific* CRender::ros_create(IRenderable* parent) { return new CROS_impl(); }
 void CRender::ros_destroy(IRender_ObjectSpecific* & p) { xr_delete(p); }

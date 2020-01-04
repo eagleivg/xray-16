@@ -222,12 +222,7 @@ void CGamePersistent::OnAppStart()
         nullptr, nullptr, &globalsInitialized);
 
     // load game materials
-    TaskScheduler->AddTask("GMLib.Load()", [&]()
-    {
-        GEnv.Render->MakeContextCurrent(IRender::HelperContext); // free to use, so let's use it
-        GMLib.Load();
-        GEnv.Render->MakeContextCurrent(IRender::NoContext); // release it for other users
-    }, nullptr, nullptr, &materialsLoaded);
+    GMLib.Load();
 
     SetupUIStyle();
     GEnv.UI = new UICore();
@@ -250,7 +245,6 @@ void CGamePersistent::OnAppStart()
 
     Device.WaitEvent(globalsInitialized);
     Device.WaitEvent(menuCreated);
-    Device.WaitEvent(materialsLoaded);
 }
 
 void CGamePersistent::OnAppEnd()

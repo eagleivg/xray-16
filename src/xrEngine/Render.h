@@ -428,5 +428,4 @@ public:
     virtual void OnAssetsChanged() = 0;
 
     virtual void ObtainRequiredWindowFlags(u32& windowFlags) = 0;
-    virtual void MakeContextCurrent(RenderContext context) = 0;
 };
