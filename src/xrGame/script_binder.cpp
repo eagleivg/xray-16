@@ -15,6 +15,7 @@
 #include "script_game_object.h"
 #include "GameObject.h"
 #include "Level.h"
+#include "lua.hpp"
 
 // comment next string when commiting
 //#define DBG_DISABLE_SCRIPTS
@@ -148,13 +149,40 @@ void CScriptBinder::set_object(CScriptBinderObject* object)
     }
 }
 
+#ifdef _DEBUG
+void profilerCallback(void *data, lua_State *L, int samples, int vmstate)
+{
+    size_t outputLen = 0;
+    pcstr dump = luaJIT_profile_dumpstack(L, "l(f)Z\n", 10, &outputLen);
+    xr_sprintf (static_cast<char *>(data), 1024, "(%c) %s", static_cast<char>(vmstate), dump);
+}
+#endif
+
 void CScriptBinder::shedule_Update(u32 time_delta)
 {
     if (m_object)
     {
         try
         {
+#ifdef _DEBUG
+            CTimer eTimer;
+            eTimer.Start ();
+
+            string1024 dump;
+            luaJIT_profile_start(GEnv.ScriptEngine->lua(), "3sm1vzfl", &profilerCallback, dump);
+#endif
             m_object->shedule_Update(time_delta);
+#ifdef _DEBUG
+            luaJIT_profile_stop(GEnv.ScriptEngine->lua());
+            const u64 DestroyTime = eTimer.GetElapsed_ms();
+            if (DestroyTime > 3)
+            {
+                Msg("luaJIT:\n %s", dump);
+                CScriptGameObject* g_object = smart_cast<CScriptGameObject*>(m_object->m_object);
+                if(g_object)
+                    Msg("* ScriptBinder: %s too much time consumed by shedule (%dms)", g_object->Name(), DestroyTime);
+            }
+#endif
         }
         catch (...)
         {
