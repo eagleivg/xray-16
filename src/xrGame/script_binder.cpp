@@ -177,10 +177,11 @@ void CScriptBinder::shedule_Update(u32 time_delta)
             const u64 DestroyTime = eTimer.GetElapsed_ms();
             if (DestroyTime > 3)
             {
-                Msg("luaJIT:\n %s", dump);
                 CScriptGameObject* g_object = smart_cast<CScriptGameObject*>(m_object->m_object);
                 if(g_object)
                     Msg("* ScriptBinder: %s too much time consumed by shedule (%dms)", g_object->Name(), DestroyTime);
+                if ('(' == dump[0]) 
+                    Msg("stacktrace:\n %s", dump);
             }
 #endif
         }
