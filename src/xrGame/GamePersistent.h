@@ -30,7 +30,9 @@ private:
 
     bool m_bPickableDOF;
 
+#ifdef WINDOWS
     AnselManager* ansel;
+#endif
 
     CUISequencer* m_intro;
     EVENT eQuickLoad;
