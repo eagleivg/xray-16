@@ -60,6 +60,11 @@ inline void operator delete(void* ptr) noexcept
     Memory.mem_free(ptr);
 }
 
+inline void operator delete(void* ptr, const std::nothrow_t&) noexcept
+{
+    Memory.mem_free(ptr);
+}
+
 inline void operator delete(void* ptr, std::align_val_t alignment) noexcept
 {
     Memory.mem_free(ptr, static_cast<size_t>(alignment));
