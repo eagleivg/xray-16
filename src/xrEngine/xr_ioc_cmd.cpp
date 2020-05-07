@@ -661,11 +661,7 @@ public:
             return;
 
         if (psDeviceFlags.test(rsVSync))
-        {
-            // Try adaptive vsync first
-            if (SDL_GL_SetSwapInterval(-1) == -1)
-                SDL_GL_SetSwapInterval(1);
-        }
+            SDL_GL_SetSwapInterval(1); // adaptive vsync cause tearing on NVIDIA!!!
         else
             SDL_GL_SetSwapInterval(0);
     }
