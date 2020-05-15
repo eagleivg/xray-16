@@ -13,6 +13,7 @@ CWeaponBinoculars::CWeaponBinoculars()
 {
     m_binoc_vision = NULL;
     m_bVision = false;
+    m_fPrevZoom = GetZoomFactor();
 }
 
 CWeaponBinoculars::~CWeaponBinoculars() { xr_delete(m_binoc_vision); }
@@ -38,6 +39,7 @@ bool CWeaponBinoculars::Action(u16 cmd, u32 flags)
 
 void CWeaponBinoculars::OnZoomIn()
 {
+    bool restore_zoom = false;
     if (H_Parent() && !IsZoomed())
     {
         m_sounds.StopSound("sndZoomOut");
@@ -48,8 +50,13 @@ void CWeaponBinoculars::OnZoomIn()
             //.VERIFY			(!m_binoc_vision);
             m_binoc_vision = xr_new<CBinocularsVision>(cNameSect());
         }
+        restore_zoom = true;
     }
+
     inherited::OnZoomIn();
+
+    if (restore_zoom)
+        SetZoomFactor(m_fPrevZoom);
 }
 
 void CWeaponBinoculars::OnZoomOut()
@@ -61,6 +68,7 @@ void CWeaponBinoculars::OnZoomOut()
         m_sounds.PlaySound("sndZoomOut", H_Parent()->Position(), H_Parent(), b_hud_mode);
         VERIFY(m_binoc_vision);
         xr_delete(m_binoc_vision);
+        m_fPrevZoom = GetZoomFactor();
     }
 
     inherited::OnZoomOut();

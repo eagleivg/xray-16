@@ -13,6 +13,7 @@ private:
 
 protected:
     bool m_bVision;
+	float m_fPrevZoom;
 
 public:
     CWeaponBinoculars();
