@@ -12,6 +12,10 @@
 //#define DEBUG_SCHEDULER
 //#define DEBUG_SCHEDULERMT
 
+float psShedulerCurrent = 10.f;
+float psShedulerTarget = 10.f;
+const float psShedulerReaction = 0.1f;
+
 //-------------------------------------------------------------------------------------
 void CSheduler::Initialize()
 {
@@ -399,7 +403,11 @@ void CSheduler::ProcessStep()
             continue;
 
         if (Device.dwPrecacheFrame == 0 && CPU::QPC() > cycles_limit)
+        {
+            // we have maxed out the load - increase heap
+            psShedulerTarget += psShedulerReaction * 3;
             break;
+        }
     }
 
     // Push "processed" back
@@ -408,6 +416,9 @@ void CSheduler::ProcessStep()
         Push(ItemsProcessed.back());
         ItemsProcessed.pop_back();
     }
+
+    // always try to decrease target
+    psShedulerTarget -= psShedulerReaction;
 }
 
 void CSheduler::Update()
@@ -415,9 +426,6 @@ void CSheduler::Update()
     // Initialize
     stats.Update.Begin();
     cycles_start = CPU::QPC();
-    // To calculate the time limit, 1/6 part of the rendering time is taken
-    float psShedulerCurrent = (Device.GetStats().RenderTotal.result * 10)/Device.GetStats().fRFPS;
-    clamp(psShedulerCurrent, 1.f, Device.GetStats().RenderTotal.result/2.f);
     cycles_limit = CPU::qpc_freq * u64(iCeil(psShedulerCurrent)) / 1000ul + cycles_start;
     internal_Registration();
 
@@ -457,6 +465,8 @@ void CSheduler::Update()
 #ifdef DEBUG_SCHEDULER
     Msg("SCHEDULER: PROCESS STEP FINISHED %d", Device.dwFrame);
 #endif
+    clamp(psShedulerTarget, 3.f, 66.f);
+    psShedulerCurrent = 0.9f * psShedulerCurrent + 0.1f * psShedulerTarget;
     stats.Load = psShedulerCurrent;
 
     // Finalize
