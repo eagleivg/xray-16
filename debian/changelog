@@ -1,8 +1,7 @@
-openxray (1.6.02-12-ubuntu1) disco; urgency=medium
+openxray (1.6.02-730-ubuntu1) bionic; urgency=medium
 
-  * move shlib to /usr/lib
-  * try auto dep
+  * fix rain drops
+  * implement SSLR water reflections
+  * implement store binocular magnifier
 
-  * fix build
-
- -- Ilya Orlov <eagleivg@mail.ru>  Sun, 23 Jun 2019 14:46:00 +0300
+ -- Ilya Orlov <eagleivg@mail.ru>  Fr, 10 Jul 2020 14:46:00 +0300
